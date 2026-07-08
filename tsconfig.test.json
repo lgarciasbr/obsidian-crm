@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "dist-test",
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmitOnError": true
+  },
+  "include": ["src/crm/integrity.ts", "src/crm/validator.ts", "tests/**/*.ts"]
+}

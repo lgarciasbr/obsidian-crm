@@ -1,0 +1,10 @@
+{
+  "id": "relationship-crm",
+  "name": "Relationship CRM",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "A local-first CRM for solo professionals to manage relationships, opportunities, and follow-ups inside Obsidian.",
+  "author": "Leandro Garcia",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}

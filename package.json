@@ -1,0 +1,26 @@
+{
+  "name": "relationship-crm",
+  "version": "0.1.0",
+  "description": "A local-first CRM for solo professionals inside Obsidian.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/tests/**/*.test.js\""
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "crm",
+    "local-first"
+  ],
+  "author": "Leandro Garcia",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.28.1",
+    "obsidian": "^1.5.12",
+    "typescript": "^5.4.3"
+  }
+}
