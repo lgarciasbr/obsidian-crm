@@ -10,9 +10,9 @@ import { safeFileName } from "./src/crm/file-names";
 import {
   DEFAULT_PIPELINE_STAGES,
   ensurePipelineFile,
-  OPPORTUNITY_PIPELINE_VIEW_TYPE,
-  OpportunityPipelineView,
-} from "./src/views/opportunity-pipeline";
+  CRM_VIEW_TYPE,
+  CrmView,
+} from "./src/views/crm-view";
 import {
   DEFAULT_SETTINGS,
   RelationshipCrmSettings,
@@ -30,8 +30,8 @@ export default class RelationshipCrmPlugin extends Plugin {
     this.addSettingTab(new RelationshipCrmSettingTab(this.app, this));
 
     this.registerView(
-      OPPORTUNITY_PIPELINE_VIEW_TYPE,
-      (leaf) => new OpportunityPipelineView(
+      CRM_VIEW_TYPE,
+      (leaf) => new CrmView(
         leaf,
         this.repository(),
         this.app.fileManager,
@@ -51,18 +51,18 @@ export default class RelationshipCrmPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
         if (leaf) {
-          this.openPipelineMarkdownAsPipelineView(leaf);
+          this.openPipelineMarkdownAsCrmView(leaf);
         }
       })
     );
 
     this.addCommand({
-      id: "open-opportunity-pipeline",
-      name: "Open opportunity pipeline",
-      callback: () => this.openOrCreatePipeline(),
+      id: "open-crm",
+      name: "Open Relationship CRM",
+      callback: () => this.openOrCreateCrm(),
     });
 
-    this.addRibbonIcon("filter", "Abrir CRM (Pipeline)", () => this.openOrCreatePipeline());
+    this.addRibbonIcon("filter", "Abrir Relationship CRM", () => this.openOrCreateCrm());
 
     this.addCommand({
       id: "initialize-crm-folders",
@@ -358,8 +358,8 @@ export default class RelationshipCrmPlugin extends Plugin {
     return DEFAULT_PIPELINE_STAGES;
   }
 
-  private async openOrCreatePipeline(): Promise<void> {
-    // Garante a estrutura do CRM e abre o Pipeline (cria se não existir).
+  private async openOrCreateCrm(): Promise<void> {
+    // Garante a estrutura do CRM e abre a CRM Home baseada no arquivo Pipeline.md.
     await ensureCrmFolders(this.app.vault, this.settings.crmRoot);
     const file = await ensurePipelineFile(this.app.vault, this.settings);
     if (!file) {
@@ -369,27 +369,27 @@ export default class RelationshipCrmPlugin extends Plugin {
 
     await this.ensurePipelineStages(file);
 
-    // Se o Pipeline já estiver aberto, apenas foca nele.
-    const existing = this.app.workspace.getLeavesOfType(OPPORTUNITY_PIPELINE_VIEW_TYPE)
+    // Se a CRM Home já estiver aberta para este arquivo, apenas foca nela.
+    const existing = this.app.workspace.getLeavesOfType(CRM_VIEW_TYPE)
       .find((leaf) => (leaf.view as { file?: { path: string } })?.file?.path === file.path);
     if (existing) {
       this.app.workspace.setActiveLeaf(existing, { focus: true });
       return;
     }
 
-    await this.openPipelineFile(file);
+    await this.openCrmFile(file);
   }
 
-  private async openPipelineFile(file: { path: string }): Promise<void> {
+  private async openCrmFile(file: { path: string }): Promise<void> {
     const leaf = this.app.workspace.getLeaf(false);
     await leaf.setViewState({
-      type: OPPORTUNITY_PIPELINE_VIEW_TYPE,
+      type: CRM_VIEW_TYPE,
       state: { file: file.path },
       active: true,
     });
   }
 
-  private openPipelineMarkdownAsPipelineView(leaf: WorkspaceLeaf): void {
+  private openPipelineMarkdownAsCrmView(leaf: WorkspaceLeaf): void {
     if (!(leaf.view instanceof MarkdownView)) {
       return;
     }
@@ -401,7 +401,7 @@ export default class RelationshipCrmPlugin extends Plugin {
 
     window.setTimeout(async () => {
       await this.ensurePipelineStages(file);
-      await this.openPipelineFile(file);
+      await this.openCrmFile(file);
     }, 0);
   }
 

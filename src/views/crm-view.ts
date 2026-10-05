@@ -3,7 +3,7 @@ import { RelationshipCrmSettings, normalizeFolderPath, resolveLocale } from "../
 import { ensureCrmFolders } from "../crm/folders";
 import { CrmRecord, CrmRepository } from "../crm/repository";
 
-export const OPPORTUNITY_PIPELINE_VIEW_TYPE = "relationship-crm-pipeline";
+export const CRM_VIEW_TYPE = "relationship-crm";
 
 export const DEFAULT_PIPELINE_STAGES = ["lead", "conversation", "proposal", "negotiation", "won", "lost", "paused"];
 
@@ -16,12 +16,14 @@ export async function ensurePipelineFile(vault: Vault, settings: RelationshipCrm
   return file instanceof TFile ? file : null;
 }
 
-export class OpportunityPipelineView extends TextFileView {
+export class CrmView extends TextFileView {
   private dataValue = "";
   private stagesOverride: string[] | null = null;
   private recordStageOverrides = new Map<string, string>();
   private collapsedStages = new Set<string>();
   private collapsedLoaded = false;
+  private activeTab: "dashboard" | "companies" | "contacts" | "pipeline" = "pipeline";
+  private contactsSearch = "";
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -48,15 +50,15 @@ export class OpportunityPipelineView extends TextFileView {
   }
 
   getViewType(): string {
-    return OPPORTUNITY_PIPELINE_VIEW_TYPE;
+    return CRM_VIEW_TYPE;
   }
 
   getDisplayText(): string {
-    return this.file?.basename || "Pipeline";
+    return "Relationship CRM";
   }
 
   getIcon(): string {
-    return "kanban-square";
+    return "layout-dashboard";
   }
 
   getViewData(): string {
@@ -87,13 +89,28 @@ export class OpportunityPipelineView extends TextFileView {
       this.loadCollapsedFromFrontmatter();
     }
     contentEl.empty();
-    contentEl.addClass("relationship-crm-pipeline-view");
+    contentEl.addClass("relationship-crm-view");
 
-    const toolbar = contentEl.createDiv({ cls: "relationship-crm-pipeline-toolbar" });
-    toolbar.createEl("h2", { text: "Pipeline" });
-    const actions = toolbar.createDiv({ cls: "relationship-crm-pipeline-toolbar-actions" });
-    this.renderToolbarButton(actions, "user-plus", "Nova pessoa", this.onAddPerson);
-    this.renderToolbarButton(actions, "building-2", "Nova empresa", this.onAddCompany);
+    const navigation = contentEl.createDiv({ cls: "relationship-crm-navigation" });
+    const tabs = navigation.createDiv({ cls: "relationship-crm-tabs" });
+    this.renderTabs(tabs);
+    const actions = navigation.createDiv({ cls: "relationship-crm-pipeline-toolbar-actions" });
+    this.renderContextualActions(actions);
+
+    if (this.activeTab === "contacts") {
+      this.renderContacts(contentEl, "person");
+      return;
+    }
+
+    if (this.activeTab === "companies") {
+      this.renderContacts(contentEl, "company");
+      return;
+    }
+
+    if (this.activeTab === "dashboard") {
+      this.renderDashboardPlaceholder(contentEl);
+      return;
+    }
 
     const opportunities = this.repository.listRecords("crm/opportunity");
     const stages = this.pipelineStages();
@@ -171,6 +188,167 @@ export class OpportunityPipelineView extends TextFileView {
         await this.addColumn();
       }
     });
+  }
+
+
+  private renderTabs(container: HTMLElement): void {
+    this.renderTabButton(container, "Dashboard", "dashboard");
+    this.renderTabButton(container, "Empresas", "companies");
+    this.renderTabButton(container, "Contatos", "contacts");
+    this.renderTabButton(container, "Pipeline", "pipeline");
+  }
+
+  private renderTabButton(container: HTMLElement, label: string, tab: "dashboard" | "companies" | "contacts" | "pipeline"): void {
+    const active = this.activeTab === tab;
+    const button = container.createEl("button", {
+      text: label,
+      cls: `relationship-crm-tab${active ? " is-active" : ""}`,
+      attr: { "aria-pressed": active ? "true" : "false" },
+    });
+    button.addEventListener("click", () => {
+      this.activeTab = tab;
+      this.contactsSearch = "";
+      this.render();
+    });
+  }
+
+  private renderDashboardPlaceholder(container: HTMLElement): void {
+    const placeholder = container.createDiv({ cls: "relationship-crm-empty-state" });
+    placeholder.createEl("h3", { text: "Dashboard" });
+    placeholder.createEl("p", { text: "A visão de dashboard será implementada no próximo refinamento." });
+  }
+
+  private renderContextualActions(_container: HTMLElement): void {
+    // Primary actions live inside each tab surface. Pipeline intentionally has
+    // no top-level action buttons to keep the board visually focused.
+  }
+
+  private renderContacts(container: HTMLElement, kind: "person" | "company"): void {
+    const content = container.createDiv({ cls: "relationship-crm-contacts" });
+
+    const controls = content.createDiv({ cls: "relationship-crm-contacts-controls" });
+    const heading = controls.createDiv({ cls: "relationship-crm-contacts-heading" });
+    heading.createEl("h3", { text: kind === "person" ? "Contatos" : "Empresas" });
+
+    const localActions = controls.createDiv({ cls: "relationship-crm-contacts-actions" });
+    const search = localActions.createEl("input", {
+      cls: "relationship-crm-contacts-search",
+      attr: { type: "search", placeholder: kind === "person" ? "Buscar contatos..." : "Buscar empresas..." },
+    });
+    search.value = this.contactsSearch;
+    this.renderToolbarButton(
+      localActions,
+      kind === "person" ? "user-plus" : "building-2",
+      kind === "person" ? "Novo contato" : "Nova empresa",
+      kind === "person" ? this.onAddPerson : this.onAddCompany
+    );
+
+    const table = content.createDiv({ cls: "relationship-crm-contacts-table" });
+    const renderRows = () => this.renderContactRows(table, kind);
+    search.addEventListener("input", () => {
+      this.contactsSearch = search.value;
+      renderRows();
+    });
+    renderRows();
+  }
+
+  private renderContactRows(table: HTMLElement, kind: "person" | "company"): void {
+    table.empty();
+    const contacts = this.contactViewModels();
+    const query = this.contactsSearch.trim().toLowerCase();
+    const filtered = contacts.filter((contact) => {
+      const matchesType = contact.kind === kind;
+      const matchesSearch = !query || [contact.name, contact.company, contact.nextAction, contact.email, contact.phone, contact.site, contact.industry]
+        .some((value) => value.toLowerCase().includes(query));
+      return matchesType && matchesSearch;
+    });
+
+    if (!filtered.length) {
+      table.createDiv({ text: kind === "person" ? "Nenhum contato encontrado." : "Nenhuma empresa encontrada.", cls: "relationship-crm-empty-state" });
+      return;
+    }
+
+    for (const contact of filtered) {
+      if (kind === "person") {
+        this.renderPersonListItem(table, contact);
+      } else {
+        this.renderCompanyListItem(table, contact);
+      }
+    }
+  }
+
+  private renderPersonListItem(container: HTMLElement, contact: ContactViewModel): void {
+    const item = container.createDiv({ cls: "relationship-crm-list-item" });
+    const main = item.createDiv({ cls: "relationship-crm-list-item-main" });
+    const name = main.createSpan({ text: contact.name, cls: "relationship-crm-list-title relationship-crm-link" });
+    name.addEventListener("click", () => this.openRecord(contact.record));
+
+    if (contact.company) {
+      const company = main.createSpan({ text: contact.company, cls: "relationship-crm-list-meta relationship-crm-link" });
+      company.addEventListener("click", () => this.openRelatedRecord("crm/company", contact.company));
+    }
+
+    const details = [contact.email, contact.phone].filter(Boolean);
+    if (details.length) {
+      const secondary = item.createDiv({ cls: "relationship-crm-list-item-secondary" });
+      for (const detail of details) {
+        secondary.createSpan({ text: detail });
+      }
+    }
+  }
+
+  private renderCompanyListItem(container: HTMLElement, contact: ContactViewModel): void {
+    const item = container.createDiv({ cls: "relationship-crm-list-item" });
+    const main = item.createDiv({ cls: "relationship-crm-list-item-main" });
+    const name = main.createSpan({ text: contact.name, cls: "relationship-crm-list-title relationship-crm-link" });
+    name.addEventListener("click", () => this.openRecord(contact.record));
+    main.createSpan({ text: `${contact.opportunityCount} oportunidade${contact.opportunityCount === 1 ? "" : "s"}`, cls: "relationship-crm-list-meta" });
+
+    const details = [contact.site, contact.industry].filter(Boolean);
+    if (details.length) {
+      const secondary = item.createDiv({ cls: "relationship-crm-list-item-secondary" });
+      if (contact.site) {
+        const site = secondary.createSpan({ text: contact.site, cls: "relationship-crm-link" });
+        site.addEventListener("click", () => window.open(contact.site, "_blank"));
+      }
+      if (contact.industry) {
+        secondary.createSpan({ text: contact.industry });
+      }
+    }
+  }
+
+  private contactViewModels(): ContactViewModel[] {
+    const peopleRecords = this.repository.listRecords("crm/person");
+    const opportunityRecords = this.repository.listRecords("crm/opportunity");
+    const people = peopleRecords.map((record) => ({
+      kind: "person" as const,
+      name: record.name,
+      company: cleanLink(stringField(record, "company")),
+      lastContact: stringField(record, "last_contact"),
+      nextAction: stringField(record, "next_action"),
+      email: stringField(record, "email"),
+      phone: stringField(record, "phone"),
+      site: "",
+      industry: "",
+      peopleCount: 0,
+      opportunityCount: 0,
+      record,
+    }));
+    const companies = this.repository.listRecords("crm/company").map((record) => ({
+      kind: "company" as const,
+      name: record.name,
+      company: "",
+      lastContact: stringField(record, "last_contact"),
+      nextAction: stringField(record, "next_action"),
+      email: "",
+      phone: "",
+      site: stringField(record, "site"),
+      industry: stringField(record, "industry"),
+      peopleCount: peopleRecords.filter((person) => cleanLink(stringField(person, "company")) === record.name).length,
+      opportunityCount: opportunityRecords.filter((opportunity) => cleanLink(stringField(opportunity, "company")) === record.name).length,
+      record,
+    }));
+    return [...people, ...companies].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   private renderToolbarButton(container: HTMLElement, icon: string, label: string, onClick: () => void): void {
@@ -557,6 +735,21 @@ export class OpportunityPipelineView extends TextFileView {
     this.recordStageOverrides.set(record.path, normalizeStage(stage));
     this.render();
   }
+}
+
+interface ContactViewModel {
+  kind: "person" | "company";
+  name: string;
+  company: string;
+  lastContact: string;
+  nextAction: string;
+  email: string;
+  phone: string;
+  site: string;
+  industry: string;
+  peopleCount: number;
+  opportunityCount: number;
+  record: CrmRecord;
 }
 
 class PipelineStageModal extends Modal {

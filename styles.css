@@ -30,6 +30,152 @@
   padding-top: 0.85rem;
 }
 
+.relationship-crm-view {
+  height: 100%;
+  overflow: hidden;
+  padding: 0.75rem 1rem 0;
+  position: relative;
+}
+
+.relationship-crm-navigation {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--background-modifier-border);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.relationship-crm-view > .relationship-crm-pipeline-board {
+  bottom: 0;
+  height: auto;
+  left: 1rem;
+  position: absolute;
+  right: 1rem;
+  top: 3.35rem;
+}
+
+.relationship-crm-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.relationship-crm-tab {
+  background: transparent;
+  border: 0;
+  border-radius: 6px 6px 0 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.45rem 0.75rem;
+}
+
+.relationship-crm-tab:hover,
+.relationship-crm-tab.is-active {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.relationship-crm-tab.is-active {
+  font-weight: 700;
+}
+
+.relationship-crm-navigation .relationship-crm-pipeline-toolbar-actions {
+  transform: translateY(-4px);
+}
+
+.relationship-crm-contacts {
+  height: calc(100% - 3.5rem);
+  overflow: auto;
+}
+
+.relationship-crm-contacts-controls {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 0.15rem 0 0.85rem;
+}
+
+.relationship-crm-contacts-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.relationship-crm-contacts-heading h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.relationship-crm-contacts-open {
+  cursor: pointer;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.55rem;
+}
+
+.relationship-crm-contacts-search {
+  font-size: 0.9rem;
+  max-width: 320px;
+  min-width: 220px;
+  width: 32vw;
+}
+
+.relationship-crm-contacts-table {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.relationship-crm-list-item {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  cursor: default;
+  padding: 0.7rem 0.8rem;
+}
+
+.relationship-crm-list-item:hover {
+  border-color: var(--interactive-accent);
+}
+
+.relationship-crm-list-item-main {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.relationship-crm-list-title {
+  font-weight: 700;
+}
+
+.relationship-crm-list-meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.relationship-crm-list-item-secondary {
+  color: var(--text-muted);
+  display: flex;
+  font-size: 0.86rem;
+  gap: 1rem;
+}
+
+.relationship-crm-link {
+  cursor: pointer;
+}
+
+.relationship-crm-link:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.relationship-crm-empty-state {
+  color: var(--text-muted);
+  padding: 1rem;
+}
+
 .relationship-crm-pipeline-view {
   height: 100%;
   overflow: hidden;
@@ -50,6 +196,10 @@
 .relationship-crm-pipeline-toolbar-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.relationship-crm-pipeline-toolbar-actions:empty {
+  display: none;
 }
 
 .relationship-crm-pipeline-toolbar-button {
