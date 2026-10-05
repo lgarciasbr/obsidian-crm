@@ -32,7 +32,7 @@ export function parseFrontmatter(content: string): Frontmatter {
   for (const line of match[1].split("\n")) {
     const item = line.match(/^\s+-\s+(.*)$/);
     if (item && listKey) {
-      (result[listKey] as unknown[]).push(scalar(item[1]));
+      (result[listKey] as unknown[]).push(scalar(item[1]) as string);
       continue;
     }
     const pair = line.match(/^([\w-]+):\s*(.*)$/);
@@ -52,7 +52,8 @@ export function parseFrontmatter(content: string): Frontmatter {
   return result;
 }
 
-function scalar(raw: string): string {
+function scalar(raw: string): string | string[] {
+  if (raw === "[]") return [];
   return raw.startsWith('"') ? JSON.parse(raw) : raw;
 }
 
@@ -83,6 +84,11 @@ export class FakeVault {
   }
   async modify(file: TFile, content: string): Promise<void> {
     this.files.get(file.path)!.content = content;
+  }
+  async process(file: TFile, fn: (content: string) => string): Promise<string> {
+    const entry = this.files.get(file.path)!;
+    entry.content = fn(entry.content);
+    return entry.content;
   }
   async createFolder(path: string): Promise<void> {
     this.folders.add(path);

@@ -1,10 +1,13 @@
 import { TFile, Vault } from "obsidian";
 import { CRM_SUBFOLDERS } from "../constants";
 import { DEFAULT_STAGES } from "./integrity";
-import { normalizeFolderPath } from "../settings";
+import { CrmSettings, normalizeFolderPath } from "../settings";
+import { ensureAgentGuide } from "./agent-guide";
 
-export async function ensureCrmFolders(vault: Vault, crmRoot: string): Promise<void> {
-  const root = normalizeFolderPath(crmRoot);
+// Creates whatever is missing in the CRM root: folders, Pipeline.md and the
+// agent guide. Never overwrites existing files.
+export async function ensureCrmFolders(vault: Vault, settings: CrmSettings): Promise<void> {
+  const root = normalizeFolderPath(settings.crmRoot);
   await ensureFolder(vault, root);
 
   for (const subfolder of CRM_SUBFOLDERS) {
@@ -12,6 +15,7 @@ export async function ensureCrmFolders(vault: Vault, crmRoot: string): Promise<v
   }
 
   await ensurePipelineFile(vault, root);
+  await ensureAgentGuide(vault, settings);
 }
 
 async function ensureFolder(vault: Vault, path: string): Promise<void> {

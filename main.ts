@@ -2,6 +2,7 @@ import { MarkdownView, Notice, Plugin, TFile, WorkspaceLeaf } from "obsidian";
 import { EntityCreator } from "./src/crm/entity-creation";
 import { DEFAULT_STAGES, INTERACTION_KINDS } from "./src/crm/integrity";
 import { NEXT_ACTION_TYPES, setNextAction } from "./src/crm/next-action";
+import { updateAgentGuide } from "./src/crm/agent-guide";
 import { ensureCrmFolders } from "./src/crm/folders";
 import { InteractionCreator } from "./src/crm/interactions";
 import { CrmRepository } from "./src/crm/repository";
@@ -69,7 +70,7 @@ export default class CrmPlugin extends Plugin {
       id: "initialize-folders",
       name: "Initialize folders",
       callback: async () => {
-        await ensureCrmFolders(this.app.vault, this.settings.crmRoot);
+        await ensureCrmFolders(this.app.vault, this.settings);
         const pipelineFile = await ensurePipelineFile(this.app.vault, this.settings);
         if (pipelineFile) {
           await this.ensurePipelineStages(pipelineFile);
@@ -115,6 +116,16 @@ export default class CrmPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "update-agent-guide",
+      name: "Update agent guide",
+      callback: async () => {
+        await ensureCrmFolders(this.app.vault, this.settings);
+        await updateAgentGuide(this.app.vault, this.settings);
+        new Notice(`Agent guide updated: ${normalizeFolderPath(this.settings.crmRoot)}/AGENTS.md`);
+      },
+    });
+
+    this.addCommand({
       id: "validate",
       name: "Validate data",
       callback: () => this.runValidation(),
@@ -137,10 +148,10 @@ export default class CrmPlugin extends Plugin {
     const existing = this.app.vault.getAbstractFileByPath(path);
     let file: TFile;
     if (existing instanceof TFile) {
-      await this.app.vault.modify(existing, content);
+      await this.app.vault.process(existing, () => content);
       file = existing;
     } else {
-      await ensureCrmFolders(this.app.vault, this.settings.crmRoot);
+      await ensureCrmFolders(this.app.vault, this.settings);
       file = await this.app.vault.create(path, content) as TFile;
     }
 
@@ -297,7 +308,7 @@ export default class CrmPlugin extends Plugin {
 
   private async openOrCreateCrm(): Promise<void> {
     // Ensure the CRM structure exists and open the CRM view backed by Pipeline.md.
-    await ensureCrmFolders(this.app.vault, this.settings.crmRoot);
+    await ensureCrmFolders(this.app.vault, this.settings);
     const file = await ensurePipelineFile(this.app.vault, this.settings);
     if (!file) {
       new Notice("Could not create CRM/Pipeline.md.");

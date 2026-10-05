@@ -1,8 +1,8 @@
 import { FileManager, MetadataCache, Notice, TFile, Vault, Workspace } from "obsidian";
 import { CrmSettings, normalizeFolderPath } from "../settings";
 import { today } from "./dates";
-import { crmId, safeFileName } from "./file-names";
-import { frontmatter } from "./frontmatter";
+import { safeFileName } from "./file-names";
+import { interactionNote, interactionTitle } from "./templates";
 import { ensureCrmFolders } from "./folders";
 import { CrmRepository } from "./repository";
 import { EntityCreator, EntityRef } from "./entity-creation";
@@ -22,7 +22,7 @@ export class InteractionCreator {
   ) {}
 
   async createInteraction(values: EntityFormResult): Promise<void> {
-    await ensureCrmFolders(this.vault, this.settings.crmRoot);
+    await ensureCrmFolders(this.vault, this.settings);
 
     // People and companies typed as new in the form are created first, so the
     // interaction links to the real notes (with their final file names).
@@ -32,23 +32,22 @@ export class InteractionCreator {
 
     const date = values.date?.trim() || today();
     const kind = values.kind?.trim() || "note";
-    const titleTarget = person?.file.basename || company?.file.basename || "Interaction";
-    const title = `${date} - ${kind} - ${titleTarget}`;
+    const target = person?.file.basename || company?.file.basename || "Interaction";
+    const title = interactionTitle(date, kind, target);
     const path = await this.nextAvailablePath(`Interactions/${safeFileName(title)}.md`);
     const task = this.settings.createTasksByDefault ? followUpTask(values.next_action, values.next_action_date, this.settings.taskTag) : "";
-
-    const content = frontmatter({
-      type: "crm/interaction",
-      crm_id: crmId("interaction", title),
+    const content = interactionNote({
+      title,
       date,
       kind,
       people: person ? [person.link] : [],
       company: company?.link ?? "",
       opportunity: opportunity?.link ?? "",
-      next_action: values.next_action,
-      next_action_date: values.next_action_date,
-      tags: ["crm/interaction"],
-    }, `# ${title}\n\n## Summary\n\n${values.summary || ""}\n\n## Key points\n\n## Commitments\n\n## Next action\n\n${task || values.next_action || ""}\n`);
+      nextAction: values.next_action,
+      nextActionDate: values.next_action_date,
+      summary: values.summary,
+      task,
+    });
 
     const file = await this.vault.create(path, content) as TFile;
     const failedUpdates: string[] = [];

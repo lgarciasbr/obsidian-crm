@@ -8,7 +8,7 @@ import { addStage, formatDate, formatMoney, frontmatterList, moveStage, normaliz
 export const CRM_VIEW_TYPE = "crm-view";
 
 export async function ensurePipelineFile(vault: Vault, settings: CrmSettings): Promise<TFile | null> {
-  await ensureCrmFolders(vault, settings.crmRoot);
+  await ensureCrmFolders(vault, settings);
 
   const root = normalizeFolderPath(settings.crmRoot);
   const path = `${root}/Pipeline.md`;

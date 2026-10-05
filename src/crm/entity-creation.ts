@@ -1,8 +1,8 @@
 import { FileManager, MetadataCache, Notice, TFile, Vault, Workspace } from "obsidian";
 import { CrmSettings, normalizeFolderPath } from "../settings";
 import { today } from "./dates";
-import { safeFileName, crmId } from "./file-names";
-import { frontmatter } from "./frontmatter";
+import { safeFileName } from "./file-names";
+import { companyNote, opportunityNote, opportunityTitle, personNote } from "./templates";
 import { EntityFormResult } from "./types";
 import { ensureCrmFolders } from "./folders";
 import { CrmRecordType, CrmRepository } from "./repository";
@@ -45,22 +45,17 @@ export class EntityCreator {
     const companyLabel = company?.file.basename ?? relatedValue(values, "company");
 
     const name = values.name.trim();
-    const path = await this.nextAvailablePath(`Opportunities/${safeFileName(companyLabel)} - ${safeFileName(name)}.md`);
-    const content = frontmatter({
-      type: "crm/opportunity",
-      crm_id: crmId("opportunity", `${companyLabel}-${name}`),
+    const path = await this.nextAvailablePath(`Opportunities/${safeFileName(opportunityTitle(companyLabel, name))}.md`);
+    const content = opportunityNote({
       name,
+      companyLabel,
       company: companyValue,
       contact: contactValue,
       stage: values.stage || "lead",
       value: values.value,
       notes: values.notes,
       created: today(),
-      last_contact: "",
-      next_action: "",
-      next_action_date: "",
-      tags: ["crm/opportunity"],
-    }, opportunityBody(`${companyLabel} - ${name}`, companyValue, contactValue));
+    });
 
     const opportunity = await this.createAndMaybeOpen(path, content, openFile);
     // R7 backlink symmetry: the company and the contact list the opportunity.
@@ -174,53 +169,20 @@ export class EntityCreator {
       await this.fileManager.renameFile(file, target);
     }
 
-    const content = await this.vault.read(file);
-    const updated = content.replace(/^#\s+.*$/m, `# ${file.basename}`);
-    if (updated !== content) {
-      await this.vault.modify(file, updated);
-    }
+    await this.vault.process(file, (content) => content.replace(/^#\s+.*$/m, `# ${file.basename}`));
     return file;
   }
 
   private async createPersonRecord(values: EntityFormResult, openFile: boolean): Promise<TFile> {
-    await ensureCrmFolders(this.vault, this.settings.crmRoot);
-    const name = values.name.trim();
-    const path = await this.nextAvailablePath(`People/${safeFileName(name)}.md`);
-    const content = frontmatter({
-      type: "crm/person",
-      crm_id: crmId("person", name),
-      name,
-      company: values.company,
-      role: values.role,
-      email: values.email,
-      phone: values.phone,
-      linkedin: values.linkedin,
-      last_contact: "",
-      next_action: "",
-      next_action_date: "",
-      tags: ["crm/person"],
-    }, `# ${name}\n\n## Context\n\n## Opportunities\n\n## History\n`);
-
-    return this.createAndMaybeOpen(path, content, openFile);
+    await ensureCrmFolders(this.vault, this.settings);
+    const path = await this.nextAvailablePath(`People/${safeFileName(values.name.trim())}.md`);
+    return this.createAndMaybeOpen(path, personNote({ ...values, name: values.name }), openFile);
   }
 
   private async createCompanyRecord(values: EntityFormResult, openFile: boolean): Promise<TFile> {
-    await ensureCrmFolders(this.vault, this.settings.crmRoot);
-    const name = values.name.trim();
-    const path = await this.nextAvailablePath(`Companies/${safeFileName(name)}.md`);
-    const content = frontmatter({
-      type: "crm/company",
-      crm_id: crmId("company", name),
-      name,
-      site: values.site,
-      industry: values.industry,
-      last_contact: "",
-      next_action: "",
-      next_action_date: "",
-      tags: ["crm/company"],
-    }, `# ${name}\n\n## Context\n\n## People\n\n## Opportunities\n\n## History\n`);
-
-    return this.createAndMaybeOpen(path, content, openFile);
+    await ensureCrmFolders(this.vault, this.settings);
+    const path = await this.nextAvailablePath(`Companies/${safeFileName(values.name.trim())}.md`);
+    return this.createAndMaybeOpen(path, companyNote({ ...values, name: values.name }), openFile);
   }
 
   private repository(): CrmRepository {
@@ -268,9 +230,4 @@ function refTo(file: TFile): EntityRef {
 
 function linkTo(file: TFile): string {
   return `[[${file.basename}]]`;
-}
-
-function opportunityBody(title: string, company: string, contact: string): string {
-  const section = (heading: string, text: string) => (text ? `## ${heading}\n\n${text}\n\n` : `## ${heading}\n\n`);
-  return `# ${title}\n\n${section("Company", company)}${section("Contact", contact)}## Situation\n\n## Pain points\n\n## Value proposition\n\n## Next steps\n\n## History\n`;
 }

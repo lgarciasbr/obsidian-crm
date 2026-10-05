@@ -1,6 +1,9 @@
 export function frontmatter(data: Record<string, string | string[]>, body: string): string {
   const yaml = Object.entries(data)
     .map(([key, value]) => {
+      if (Array.isArray(value) && !value.length) {
+        return `${key}: []`;
+      }
       if (Array.isArray(value)) {
         return `${key}:\n${value.map((item) => `  - ${quoteYaml(item)}`).join("\n")}`;
       }

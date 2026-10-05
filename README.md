@@ -67,6 +67,13 @@ Obsidian lists them as `CRM: <command>`:
 - `Log interaction`
 - `Set next action` — only available on a person, company or opportunity note
 - `Validate data` — writes `Validation Report.md` in the CRM folder
+- `Update agent guide` — regenerates `AGENTS.md` in the CRM folder
+
+## Working with AI agents
+
+The CRM folder contains an `AGENTS.md` guide (and a `CLAUDE.md` that points to it) so an AI agent can create and update companies, people, opportunities and interactions by editing the Markdown directly without breaking links or the [data contract](docs/project/data-contract.md). The plugin creates both files when they are missing and never overwrites them on its own; run `Update agent guide` after changing pipeline stages or settings. Text you add under **Your notes** at the end of `AGENTS.md` is kept when it is regenerated.
+
+The guide's example notes are produced by the same templates the plugin uses, and the test suite validates them against the data contract, so the guide stays in step with the code.
 
 ## Tests
 

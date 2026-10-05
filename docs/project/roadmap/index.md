@@ -49,6 +49,7 @@ Rules:
 | TS-019 | Clean slate: plugin id `crm`, no compatibility layer | — (post-baseline) | 🟩 Done |
 | TS-020 | Reliable relationship references | — (post-baseline) | 🟩 Done |
 | TS-021 | Commands, settings and test coverage review | — (post-baseline) | 🟩 Done |
+| TS-022 | Agent guide in the CRM folder | — (post-baseline) | 🟩 Done |
 
 ## Baseline — 2026-10-05
 

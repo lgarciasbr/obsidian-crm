@@ -91,9 +91,5 @@ function trimBlankLines(lines: string[]): string[] {
 }
 
 async function updateFile(vault: Vault, file: TFile, change: (content: string) => string): Promise<void> {
-  const content = await vault.read(file);
-  const updated = change(content);
-  if (updated !== content) {
-    await vault.modify(file, updated);
-  }
+  await vault.process(file, change);
 }

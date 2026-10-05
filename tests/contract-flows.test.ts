@@ -27,7 +27,7 @@ const interaction = (values: Record<string, string>) => form({ kind: "call", ...
 
 test("initializing creates the folders and a Pipeline.md with the default stages", async () => {
   const { vault, any } = setup();
-  await ensureCrmFolders(any(vault), "CRM");
+  await ensureCrmFolders(any(vault), { ...DEFAULT_SETTINGS });
 
   for (const folder of ["CRM", "CRM/People", "CRM/Companies", "CRM/Opportunities", "CRM/Interactions"]) {
     assert.ok(vault.folders.has(folder), folder);
