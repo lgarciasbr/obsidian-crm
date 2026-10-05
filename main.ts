@@ -16,19 +16,19 @@ import {
 } from "./src/views/crm-view";
 import {
   DEFAULT_SETTINGS,
-  RelationshipCrmSettings,
-  RelationshipCrmSettingTab,
+  CrmSettings,
+  CrmSettingTab,
   normalizeFolderPath,
 } from "./src/settings";
 
-export default class RelationshipCrmPlugin extends Plugin {
-  settings: RelationshipCrmSettings;
+export default class CrmPlugin extends Plugin {
+  settings: CrmSettings;
 
   async onload(): Promise<void> {
     console.log("Loading CRM");
 
     await this.loadSettings();
-    this.addSettingTab(new RelationshipCrmSettingTab(this.app, this));
+    this.addSettingTab(new CrmSettingTab(this.app, this));
 
     this.registerView(
       CRM_VIEW_TYPE,
@@ -230,7 +230,7 @@ export default class RelationshipCrmPlugin extends Plugin {
     new EntityModal(this.app, "New company", [
       { key: "name", label: "Name", placeholder: "Acme", required: true },
       { key: "site", label: "Website", placeholder: "https://example.com" },
-      { key: "industry", label: "Segmento", placeholder: "Consultoria" },
+      { key: "industry", label: "Industry", placeholder: "Consulting" },
     ], async (values) => this.entityCreator().createCompany(values, openAfterCreate), "Create company").open();
   }
 

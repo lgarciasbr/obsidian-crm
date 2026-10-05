@@ -1,5 +1,5 @@
 {
-  "name": "relationship-crm",
+  "name": "obsidian-crm",
   "version": "0.1.0",
   "description": "A local-first CRM for solo professionals inside Obsidian.",
   "main": "main.js",

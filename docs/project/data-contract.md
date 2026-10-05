@@ -1,11 +1,11 @@
 [< Roadmap](roadmap/index.md)
 
-# Relationship CRM — Data Contract (v0.1)
+# CRM — Data Contract (v0.1)
 
 This is the source-of-truth contract for CRM records. Every writer — the visual
 UI **and** a human editing Markdown by hand — must produce records that satisfy
-this contract. The Attention Dashboard and any other value surface are only
-allowed to assume what this contract guarantees.
+this contract. The pipeline, the contact/company lists and any other surface are
+only allowed to assume what this contract guarantees.
 
 If a record violates this contract, it is a bug in the writer or a drift in a
 hand-edited file, not something a surface should try to "guess around".
@@ -36,7 +36,7 @@ Four record types, identified by the `type` frontmatter key:
 - Every record carries a stable `crm_id` (`<prefix>-<slug>`), generated once at
   creation. `crm_id` is the **stable identity** and must never change on rename.
 - Relationship links are stored as Obsidian wikilinks to the **basename**:
-  `company: "[[Acme]]"`, `contact: "[[Maria Souza]]"`.
+  `company: "[[Acme]]"`, `contact: "[[Jane Doe]]"`.
 - **Basename uniqueness rule:** within a given `type`, no two CRM records may
   share a basename. If they do, links become ambiguous. The validator flags this
   as `DUPLICATE_BASENAME`. Writers must not silently resolve an ambiguous name to
@@ -71,19 +71,12 @@ Four record types, identified by the `type` frontmatter key:
   `lead, conversation, proposal, negotiation, won, lost, paused`)
 - `value` (numeric string or empty), `created` (ISO date), `notes` (free text)
 
-> Removed in v0.1: `relationship_temperature`, `status`, `currency`. They were
-> written but never transitioned or exposed in any control (dead fields). They
-> will be reintroduced only when a feature actually reads/writes them (e.g.
-> cooling logic, won/lost transitions, multi-currency). The validator still
-> tolerates them if present on legacy records but no writer emits them.
-
 ### crm/interaction
 - `date` (ISO date, required)
 - `kind` ∈ {`call`, `meeting`, `email`, `whatsapp`, `linkedin`, `note`, `other`}
-  (until 2026-10-05 the pt-BR values `ligação`, `reunião`, `nota`, `outro` were used; they are now flagged as `BAD_ENUM`)
 - `people` (list of wikilinks), `company` (wikilink or empty),
   `opportunity` (wikilink or empty)
-- `outcome`, `next_action`, `next_action_date`
+- `next_action`, `next_action_date`
 
 ## 5. Integrity rules (enforced, testable)
 
@@ -97,8 +90,8 @@ Four record types, identified by the `type` frontmatter key:
   existing `next_action` / `next_action_date`. Only a non-empty interaction
   next_action replaces the record's pending action.
 
-- **R3 — valid enumerations.** `stage`, `status`, `kind`,
-  `relationship_temperature` must be within their allowed sets.
+- **R3 — valid enumerations.** `stage` (opportunity) and `kind` (interaction)
+  must be within their allowed sets.
 
 - **R4 — ISO dates.** `date`, `last_contact`, `next_action_date`, `created` are
   either empty or strict `YYYY-MM-DD`.
@@ -110,19 +103,6 @@ Four record types, identified by the `type` frontmatter key:
 - **R7 — backlink symmetry (target state).** A relationship rendered in one
   record's body should be discoverable from the other side. v0.1 minimum:
   person→company, opportunity→company, and interaction→(person, company,
-  opportunity). Missing symmetric backlinks are reported as `ASYMMETRIC_LINK`
-  warnings (non-blocking for v0.1).
-
-## 6. What surfaces may assume
-
-The Attention Dashboard may assume:
-
-- a record with `status: open` (opportunity) or `status: active`
-  (person/company) and a valid `next_action_date` belongs to Today / Overdue /
-  Next-7 buckets purely by date math;
-- a record with no `next_action` and open/active status is a "No next action";
-- `last_contact` is monotonic (never rolled back), so "Cooling" is
-  `today - last_contact > coolingThresholdDays`.
-
-If the dashboard shows nonsense, first run the validator over the vault; a
-contract violation upstream is the more likely cause than a dashboard bug.
+  opportunity). Writers maintain this through the `## People`,
+  `## Opportunities` and `## History` sections; the validator does not check it
+  yet.

@@ -16,16 +16,16 @@ export class EntityModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    this.modalEl.addClass("relationship-crm-modal-container");
+    this.modalEl.addClass("crm-modal-container");
     contentEl.empty();
-    contentEl.addClass("relationship-crm-modal");
+    contentEl.addClass("crm-modal");
     contentEl.createEl("h2", { text: this.title });
 
     let currentSection = "";
     for (const field of this.fields) {
       if (field.section && field.section !== currentSection) {
         currentSection = field.section;
-        contentEl.createEl("h3", { text: currentSection, cls: "relationship-crm-modal-section" });
+        contentEl.createEl("h3", { text: currentSection, cls: "crm-modal-section" });
       }
 
       if (field.defaultValue) {
@@ -86,7 +86,7 @@ export class EntityModal extends Modal {
         .setDesc(field.allowCreateNew ? existingRecordDescription(field) : (field.noPlaceholderOption ? "" : "Select an option."))
         .addDropdown((dropdown) => {
           if (!field.noPlaceholderOption) {
-            dropdown.addOption("", field.placeholder || "Selecionar...");
+            dropdown.addOption("", field.placeholder || "Select...");
           }
           for (const option of field.options || []) {
             dropdown.addOption(option, option);

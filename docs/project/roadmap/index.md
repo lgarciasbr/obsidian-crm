@@ -46,6 +46,7 @@ Rules:
 | TS-016 | Markdown body relationship sync | DS-003 | 🟩 Done |
 | TS-017 | CRM Home with tabs | DS-004 | 🟩 Done (baseline) |
 | TS-018 | English UI and "CRM" display name | — (post-baseline) | 🟩 Done |
+| TS-019 | Clean slate: plugin id `crm`, no compatibility layer | — (post-baseline) | 🟩 Done |
 
 ## Baseline — 2026-10-05
 

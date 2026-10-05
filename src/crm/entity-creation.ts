@@ -1,5 +1,5 @@
 import { MetadataCache, Notice, TFile, Vault, Workspace } from "obsidian";
-import { RelationshipCrmSettings, normalizeFolderPath } from "../settings";
+import { CrmSettings, normalizeFolderPath } from "../settings";
 import { today } from "./dates";
 import { safeFileName, crmId } from "./file-names";
 import { frontmatter, wikilink } from "./frontmatter";
@@ -13,7 +13,7 @@ export class EntityCreator {
     private vault: Vault,
     private workspace: Workspace,
     private metadataCache: MetadataCache,
-    private settings: RelationshipCrmSettings
+    private settings: CrmSettings
   ) {}
 
   async createPerson(values: EntityFormResult, openFile = true): Promise<void> {
@@ -72,14 +72,14 @@ export class EntityCreator {
 
     const opportunityFile = await this.createAndMaybeOpen(path, content, openFile);
     // R7 backlink symmetry: link the opportunity back from both the company
-    // and the contact person, under their "Oportunidades" section.
+    // and the contact person, under their "Opportunities" section.
     const companyRecord = refreshedRepository.findByName("crm/company", createCompany ? values.company_new : company);
     if (companyRecord) {
-      await this.addLinkToRecordSection(companyRecord.path, "Oportunidades", wikilink(opportunityFile.basename));
+      await this.addLinkToRecordSection(companyRecord.path, "Opportunities", wikilink(opportunityFile.basename));
     }
     const contactRecord = refreshedRepository.findByName("crm/person", createContact ? values.contact_new : contact);
     if (contactRecord) {
-      await this.addLinkToRecordSection(contactRecord.path, "Oportunidades", wikilink(opportunityFile.basename));
+      await this.addLinkToRecordSection(contactRecord.path, "Opportunities", wikilink(opportunityFile.basename));
     }
   }
 

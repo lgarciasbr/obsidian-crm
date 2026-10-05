@@ -12,7 +12,7 @@ import {
 test("isIsoDate accepts valid dates and empty, rejects garbage", () => {
   assert.equal(isIsoDate("2026-07-07"), true);
   assert.equal(isIsoDate(""), true);
-  assert.equal(isIsoDate("amanhã"), false);
+  assert.equal(isIsoDate("tomorrow"), false);
   assert.equal(isIsoDate("2026-13-01"), false);
   assert.equal(isIsoDate("2026-02-30"), false);
   assert.equal(isIsoDate("07/07/2026"), false);
@@ -49,7 +49,7 @@ test("valid person passes, bad date fails", () => {
     []
   );
   const bad = validateFrontmatter("crm/person", {
-    type: "crm/person", crm_id: "person-x", name: "X", next_action_date: "amanhã",
+    type: "crm/person", crm_id: "person-x", name: "X", next_action_date: "tomorrow",
   });
   assert.deepEqual(bad.map((v) => v.code), ["BAD_DATE"]);
 });
@@ -81,7 +81,7 @@ test("opportunity stage/status validated against contract", () => {
   });
   assert.deepEqual(ok, []);
   const bad = validateFrontmatter("crm/opportunity", {
-    type: "crm/opportunity", crm_id: "o-2", name: "Diag", stage: "reunião",
+    type: "crm/opportunity", crm_id: "o-2", name: "Diag", stage: "meeting",
   });
   assert.equal(bad.filter((x) => x.code === "BAD_ENUM").length, 1);
 });
@@ -91,27 +91,11 @@ test("interaction requires a valid date and known kind", () => {
     type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "call",
   });
   assert.deepEqual(ok, []);
-  // Kinds are English since the UI moved to English; legacy pt-BR values are flagged.
-  const legacy = validateFrontmatter("crm/interaction", {
-    type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "ligação",
-  });
-  assert.ok(legacy.some((x) => x.code === "BAD_ENUM" && x.field === "kind"));
   const bad = validateFrontmatter("crm/interaction", {
     type: "crm/interaction", crm_id: "i-1", date: "", kind: "zap",
   });
   assert.ok(bad.some((x) => x.field === "date"));
   assert.ok(bad.some((x) => x.field === "kind"));
-});
-
-test("deprecated leftover fields are flagged", () => {
-  const v = validateFrontmatter("crm/interaction", {
-    type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "note", outcome: "something",
-  });
-  assert.ok(v.some((x) => x.code === "DEPRECATED_FIELD" && x.field === "outcome"));
-  const p = validateFrontmatter("crm/person", {
-    type: "crm/person", crm_id: "p", name: "X", status: "active", currency: "BRL", relationship_temperature: "warm",
-  });
-  assert.equal(p.filter((x) => x.code === "DEPRECATED_FIELD").length, 3);
 });
 
 // R6

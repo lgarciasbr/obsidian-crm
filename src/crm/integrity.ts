@@ -24,14 +24,6 @@ export const INTERACTION_KINDS = [
   "other",
 ] as const;
 
-// Fields written by earlier versions but removed from the contract. Their
-// presence on a record is leftover to clean, not valid data.
-export const DEPRECATED_FIELDS = ["relationship_temperature", "status", "currency", "outcome"] as const;
-
-export const TEMPERATURES = ["", "cold", "warm", "hot"] as const;
-export const OPPORTUNITY_STATUS = ["open", "won", "lost", "paused"] as const;
-export const ENTITY_STATUS = ["active", "inactive"] as const;
-
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function isIsoDate(value: unknown): boolean {
@@ -119,12 +111,6 @@ export function validateFrontmatter(
 ): Violation[] {
   const violations: Violation[] = [];
   const stages = options.stages && options.stages.length ? options.stages : DEFAULT_STAGES;
-
-  for (const key of DEPRECATED_FIELDS) {
-    if (fm[key] !== undefined) {
-      violations.push({ code: "DEPRECATED_FIELD", field: key, message: `Deprecated field present (should be removed): ${key}` });
-    }
-  }
 
   const required = type === "crm/interaction" ? REQUIRED_ALL : [...REQUIRED_ALL, ...REQUIRED_NAMED];
   for (const key of required) {

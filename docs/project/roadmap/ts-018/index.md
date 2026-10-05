@@ -9,9 +9,9 @@
 
 ## Outcome
 
-- Inside Obsidian the plugin is shown as **CRM** (manifest name, view title, settings heading, `Open CRM` command and ribbon). The plugin id stays `relationship-crm` so existing installs and settings keep working.
+- Inside Obsidian the plugin is shown as **CRM** (manifest name, view title, settings heading, `Open CRM` command and ribbon). (The plugin id was later changed to `crm` in TS-019.)
 - All UI text (commands, modals, notices, CRM view), generated note sections and code comments are in English.
-- Interaction `kind` values are now `call`, `meeting`, `email`, `whatsapp`, `linkedin`, `note`, `other`; legacy pt-BR kinds are flagged by the validator.
+- Interaction `kind` values are now `call`, `meeting`, `email`, `whatsapp`, `linkedin`, `note`, `other`.
 - Number/currency formatting is unchanged (settings default `BRL` / `pt-BR`).
 
 ## Data Migration

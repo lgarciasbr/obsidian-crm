@@ -1,43 +1,43 @@
-.relationship-crm-modal-container {
+.crm-modal-container {
   max-width: calc(100vw - 48px);
   width: min(720px, calc(100vw - 48px));
 }
 
-.relationship-crm-modal {
+.crm-modal {
   overflow-x: hidden;
 }
 
-.relationship-crm-modal .setting-item {
+.crm-modal .setting-item {
   align-items: flex-start;
   gap: 1rem;
 }
 
-.relationship-crm-modal .setting-item-control {
+.crm-modal .setting-item-control {
   flex: 0 0 min(260px, 45%);
   justify-content: flex-end;
 }
 
-.relationship-crm-modal .setting-item-control input,
-.relationship-crm-modal .setting-item-control select {
+.crm-modal .setting-item-control input,
+.crm-modal .setting-item-control select {
   max-width: 100%;
   width: 100%;
 }
 
-.relationship-crm-modal-section {
+.crm-modal-section {
   border-top: 1px solid var(--background-modifier-border);
   font-size: 0.95rem;
   margin: 1.25rem 0 0.35rem;
   padding-top: 0.85rem;
 }
 
-.relationship-crm-view {
+.crm-view {
   height: 100%;
   overflow: hidden;
   padding: 0.75rem 1rem 0;
   position: relative;
 }
 
-.relationship-crm-navigation {
+.crm-navigation {
   align-items: flex-start;
   border-bottom: 1px solid var(--background-modifier-border);
   display: flex;
@@ -45,7 +45,7 @@
   margin-bottom: 0.75rem;
 }
 
-.relationship-crm-view > .relationship-crm-pipeline-board {
+.crm-view > .crm-pipeline-board {
   bottom: 0;
   height: auto;
   left: 1rem;
@@ -54,12 +54,12 @@
   top: 3.35rem;
 }
 
-.relationship-crm-tabs {
+.crm-tabs {
   display: flex;
   gap: 0.25rem;
 }
 
-.relationship-crm-tab {
+.crm-tab {
   background: transparent;
   border: 0;
   border-radius: 6px 6px 0 0;
@@ -68,26 +68,26 @@
   padding: 0.45rem 0.75rem;
 }
 
-.relationship-crm-tab:hover,
-.relationship-crm-tab.is-active {
+.crm-tab:hover,
+.crm-tab.is-active {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
-.relationship-crm-tab.is-active {
+.crm-tab.is-active {
   font-weight: 700;
 }
 
-.relationship-crm-navigation .relationship-crm-pipeline-toolbar-actions {
+.crm-navigation .crm-pipeline-toolbar-actions {
   transform: translateY(-4px);
 }
 
-.relationship-crm-contacts {
+.crm-contacts {
   height: calc(100% - 3.5rem);
   overflow: auto;
 }
 
-.relationship-crm-contacts-controls {
+.crm-contacts-controls {
   align-items: center;
   display: flex;
   gap: 1rem;
@@ -95,38 +95,38 @@
   margin: 0.15rem 0 0.85rem;
 }
 
-.relationship-crm-contacts-actions {
+.crm-contacts-actions {
   align-items: center;
   display: flex;
   gap: 0.5rem;
 }
 
-.relationship-crm-contacts-heading h3 {
+.crm-contacts-heading h3 {
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0;
 }
 
-.relationship-crm-contacts-open {
+.crm-contacts-open {
   cursor: pointer;
   font-size: 0.82rem;
   padding: 0.25rem 0.55rem;
 }
 
-.relationship-crm-contacts-search {
+.crm-contacts-search {
   font-size: 0.9rem;
   max-width: 320px;
   min-width: 220px;
   width: 32vw;
 }
 
-.relationship-crm-contacts-table {
+.crm-contacts-table {
   display: grid;
   gap: 0.5rem;
 }
 
-.relationship-crm-list-item {
+.crm-list-item {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
@@ -134,11 +134,11 @@
   padding: 0.7rem 0.8rem;
 }
 
-.relationship-crm-list-item:hover {
+.crm-list-item:hover {
   border-color: var(--interactive-accent);
 }
 
-.relationship-crm-list-item-main {
+.crm-list-item-main {
   align-items: center;
   display: flex;
   gap: 0.75rem;
@@ -146,74 +146,74 @@
   margin-bottom: 0.4rem;
 }
 
-.relationship-crm-list-title {
+.crm-list-title {
   font-weight: 700;
 }
 
-.relationship-crm-list-meta {
+.crm-list-meta {
   color: var(--text-muted);
   font-size: 0.85rem;
 }
 
-.relationship-crm-list-item-secondary {
+.crm-list-item-secondary {
   color: var(--text-muted);
   display: flex;
   font-size: 0.86rem;
   gap: 1rem;
 }
 
-.relationship-crm-link {
+.crm-link {
   cursor: pointer;
 }
 
-.relationship-crm-link:hover {
+.crm-link:hover {
   color: var(--text-accent);
   text-decoration: underline;
 }
 
-.relationship-crm-empty-state {
+.crm-empty-state {
   color: var(--text-muted);
   padding: 1rem;
 }
 
-.relationship-crm-pipeline-view {
+.crm-pipeline-view {
   height: 100%;
   overflow: hidden;
   padding: 0.75rem 1rem;
 }
 
-.relationship-crm-pipeline-toolbar {
+.crm-pipeline-toolbar {
   align-items: center;
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.75rem;
 }
 
-.relationship-crm-pipeline-toolbar h2 {
+.crm-pipeline-toolbar h2 {
   margin: 0;
 }
 
-.relationship-crm-pipeline-toolbar-actions {
+.crm-pipeline-toolbar-actions {
   display: flex;
   gap: 0.5rem;
 }
 
-.relationship-crm-pipeline-toolbar-actions:empty {
+.crm-pipeline-toolbar-actions:empty {
   display: none;
 }
 
-.relationship-crm-pipeline-toolbar-button {
+.crm-pipeline-toolbar-button {
   align-items: center;
   display: inline-flex;
   gap: 0.35rem;
 }
 
-.relationship-crm-pipeline-toolbar-button svg {
+.crm-pipeline-toolbar-button svg {
   height: 1rem;
   width: 1rem;
 }
 
-.relationship-crm-pipeline-board {
+.crm-pipeline-board {
   align-items: flex-start;
   display: flex;
   gap: 0.85rem;
@@ -223,12 +223,12 @@
   padding-bottom: 0.75rem;
 }
 
-.relationship-crm-pipeline-column,
-.relationship-crm-pipeline-add-column {
+.crm-pipeline-column,
+.crm-pipeline-add-column {
   flex: 0 0 292px;
 }
 
-.relationship-crm-pipeline-column {
+.crm-pipeline-column {
   background: transparent;
   display: flex;
   flex-direction: column;
@@ -238,7 +238,7 @@
 
 /* The border wraps only the cards (from below the header to the last card),
    like the Kanban plugin — the name, menu and chevron stay outside it. */
-.relationship-crm-pipeline-column-body {
+.crm-pipeline-column-body {
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   display: flex;
@@ -249,22 +249,22 @@
   padding: 0.35rem;
 }
 
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-column-body {
+.crm-pipeline-column.is-collapsed .crm-pipeline-column-body {
   display: none;
 }
 
-.relationship-crm-pipeline-add-column {
+.crm-pipeline-add-column {
   color: var(--text-muted);
   cursor: pointer;
   padding: 0.55rem;
   text-align: center;
 }
 
-.relationship-crm-pipeline-add-column:hover {
+.crm-pipeline-add-column:hover {
   color: var(--text-normal);
 }
 
-.relationship-crm-pipeline-column-header {
+.crm-pipeline-column-header {
   align-items: center;
   display: flex;
   font-weight: 700;
@@ -273,62 +273,62 @@
   padding: 0.35rem 0.25rem 0.6rem;
 }
 
-.relationship-crm-pipeline-column-title,
-.relationship-crm-pipeline-column-actions {
+.crm-pipeline-column-title,
+.crm-pipeline-column-actions {
   align-items: center;
   display: flex;
   gap: 0.35rem;
 }
 
-.relationship-crm-pipeline-column-icon {
+.crm-pipeline-column-icon {
   color: var(--text-muted);
   display: inline-flex;
 }
 
-.relationship-crm-pipeline-column-icon svg {
+.crm-pipeline-column-icon svg {
   height: 0.95rem;
   width: 0.95rem;
 }
 
-.relationship-crm-pipeline-column-chevron {
+.crm-pipeline-column-chevron {
   cursor: pointer;
 }
 
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-cards,
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-add {
+.crm-pipeline-column.is-collapsed .crm-pipeline-cards,
+.crm-pipeline-column.is-collapsed .crm-pipeline-add {
   display: none;
 }
 
 /* Coluna recolhida: faixa vertical estreita */
-.relationship-crm-pipeline-column.is-collapsed {
+.crm-pipeline-column.is-collapsed {
   flex: 0 0 40px;
 }
 
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-column-header {
+.crm-pipeline-column.is-collapsed .crm-pipeline-column-header {
   flex-direction: column;
   gap: 0.5rem;
   justify-content: flex-start;
   padding: 0.4rem 0;
 }
 
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-column-title,
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-column-actions {
+.crm-pipeline-column.is-collapsed .crm-pipeline-column-title,
+.crm-pipeline-column.is-collapsed .crm-pipeline-column-actions {
   flex-direction: column;
 }
 
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-column-title
-  > span:not(.relationship-crm-pipeline-column-icon) {
+.crm-pipeline-column.is-collapsed .crm-pipeline-column-title
+  > span:not(.crm-pipeline-column-icon) {
   writing-mode: vertical-rl;
 }
 
-.relationship-crm-pipeline-column.is-collapsed
-  .relationship-crm-pipeline-column-title
-  .relationship-crm-pipeline-column-icon:first-child,
-.relationship-crm-pipeline-column.is-collapsed .relationship-crm-pipeline-column-menu {
+.crm-pipeline-column.is-collapsed
+  .crm-pipeline-column-title
+  .crm-pipeline-column-icon:first-child,
+.crm-pipeline-column.is-collapsed .crm-pipeline-column-menu {
   display: none;
 }
 
-.relationship-crm-pipeline-column-menu {
+.crm-pipeline-column-menu {
   align-items: center;
   background: transparent !important;
   border: 0;
@@ -342,33 +342,33 @@
   width: 1.35rem;
 }
 
-.relationship-crm-pipeline-column-menu:hover,
-.relationship-crm-pipeline-column-menu:focus,
-.relationship-crm-pipeline-column-menu:active {
+.crm-pipeline-column-menu:hover,
+.crm-pipeline-column-menu:focus,
+.crm-pipeline-column-menu:active {
   background: transparent !important;
   box-shadow: none !important;
   color: var(--text-normal);
 }
 
-.relationship-crm-pipeline-column-menu svg {
+.crm-pipeline-column-menu svg {
   height: 0.95rem;
   width: 0.95rem;
 }
 
-.relationship-crm-pipeline-count {
+.crm-pipeline-count {
   color: var(--text-muted);
   font-weight: 400;
 }
 
-.relationship-crm-pipeline-add,
-.relationship-crm-pipeline-add:hover,
-.relationship-crm-pipeline-add:focus {
+.crm-pipeline-add,
+.crm-pipeline-add:hover,
+.crm-pipeline-add:focus {
   background: transparent;
   border: 0;
   box-shadow: none;
 }
 
-.relationship-crm-pipeline-add {
+.crm-pipeline-add {
   color: var(--text-muted);
   cursor: pointer;
   margin: 0.35rem 0 0;
@@ -377,16 +377,16 @@
   width: 100%;
 }
 
-.relationship-crm-pipeline-add:hover {
+.crm-pipeline-add:hover {
   color: var(--text-normal);
 }
 
-.relationship-crm-pipeline-cards {
+.crm-pipeline-cards {
   overflow-y: auto;
   padding: 0 0.15rem;
 }
 
-.relationship-crm-pipeline-card {
+.crm-pipeline-card {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 5px;
@@ -396,11 +396,11 @@
   position: relative;
 }
 
-.relationship-crm-pipeline-card:hover {
+.crm-pipeline-card:hover {
   border-color: var(--interactive-accent);
 }
 
-.relationship-crm-pipeline-card-title-row {
+.crm-pipeline-card-title-row {
   align-items: center;
   display: flex;
   gap: 0.5rem;
@@ -408,11 +408,11 @@
   margin-bottom: 0.55rem;
 }
 
-.relationship-crm-pipeline-card-title {
+.crm-pipeline-card-title {
   display: block;
 }
 
-.relationship-crm-pipeline-card-menu {
+.crm-pipeline-card-menu {
   align-items: center;
   background: transparent !important;
   border: 0;
@@ -426,16 +426,16 @@
   width: 1.35rem;
 }
 
-.relationship-crm-pipeline-card-menu:hover {
+.crm-pipeline-card-menu:hover {
   color: var(--text-normal);
 }
 
-.relationship-crm-pipeline-card-menu svg {
+.crm-pipeline-card-menu svg {
   height: 0.95rem;
   width: 0.95rem;
 }
 
-.relationship-crm-pipeline-interaction-button {
+.crm-pipeline-interaction-button {
   align-items: center;
   background: transparent !important;
   border: 0;
@@ -452,16 +452,16 @@
   width: 1.35rem;
 }
 
-.relationship-crm-pipeline-interaction-button:hover {
+.crm-pipeline-interaction-button:hover {
   color: var(--text-accent);
 }
 
-.relationship-crm-pipeline-interaction-button svg {
+.crm-pipeline-interaction-button svg {
   height: 0.95rem;
   width: 0.95rem;
 }
 
-.relationship-crm-pipeline-card-row {
+.crm-pipeline-card-row {
   align-items: start;
   display: grid;
   font-size: 0.82rem;
@@ -471,21 +471,21 @@
   margin: 0.32rem 0;
 }
 
-.relationship-crm-pipeline-card-row.is-clickable {
+.crm-pipeline-card-row.is-clickable {
   cursor: pointer;
 }
 
-.relationship-crm-pipeline-card-row.is-clickable:hover span:last-child {
+.crm-pipeline-card-row.is-clickable:hover span:last-child {
   color: var(--text-accent);
   text-decoration: underline;
 }
 
-.relationship-crm-pipeline-card-icon,
-.relationship-crm-pipeline-card-muted {
+.crm-pipeline-card-icon,
+.crm-pipeline-card-muted {
   color: var(--text-muted);
 }
 
-.relationship-crm-pipeline-card-icon {
+.crm-pipeline-card-icon {
   align-items: center;
   display: inline-flex;
   height: 1.25em;
@@ -493,7 +493,7 @@
   width: 1rem;
 }
 
-.relationship-crm-pipeline-card-icon svg {
+.crm-pipeline-card-icon svg {
   height: 0.9rem;
   width: 0.9rem;
 }

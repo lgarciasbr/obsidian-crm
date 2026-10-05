@@ -1,5 +1,5 @@
 import { MetadataCache, TFile, Vault } from "obsidian";
-import { RelationshipCrmSettings, normalizeFolderPath } from "../settings";
+import { CrmSettings, normalizeFolderPath } from "../settings";
 
 export type CrmRecordType = "crm/person" | "crm/company" | "crm/opportunity" | "crm/interaction";
 
@@ -22,7 +22,7 @@ export class CrmRepository {
   constructor(
     private vault: Vault,
     private metadataCache: MetadataCache,
-    private settings: RelationshipCrmSettings
+    private settings: CrmSettings
   ) {}
 
   listRecords(type?: CrmRecordType): CrmRecord[] {

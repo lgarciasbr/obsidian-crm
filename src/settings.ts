@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import RelationshipCrmPlugin from "../main";
+import CrmPlugin from "../main";
 
-export interface RelationshipCrmSettings {
+export interface CrmSettings {
   crmRoot: string;
   defaultFollowupDays: number;
   coolingThresholdDays: number;
@@ -11,7 +11,7 @@ export interface RelationshipCrmSettings {
   locale: string;
 }
 
-export const DEFAULT_SETTINGS: RelationshipCrmSettings = {
+export const DEFAULT_SETTINGS: CrmSettings = {
   crmRoot: "CRM",
   defaultFollowupDays: 7,
   coolingThresholdDays: 60,
@@ -22,7 +22,7 @@ export const DEFAULT_SETTINGS: RelationshipCrmSettings = {
 };
 
 // Resolves the effective locale: the configured one, or the system locale.
-export function resolveLocale(settings: RelationshipCrmSettings): string {
+export function resolveLocale(settings: CrmSettings): string {
   const configured = (settings.locale || "").trim();
   if (configured) {
     return configured;
@@ -41,10 +41,10 @@ export function normalizeFolderPath(path: string): string {
     .replace(/\/+$/, "") || DEFAULT_SETTINGS.crmRoot;
 }
 
-export class RelationshipCrmSettingTab extends PluginSettingTab {
-  plugin: RelationshipCrmPlugin;
+export class CrmSettingTab extends PluginSettingTab {
+  plugin: CrmPlugin;
 
-  constructor(app: App, plugin: RelationshipCrmPlugin) {
+  constructor(app: App, plugin: CrmPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }

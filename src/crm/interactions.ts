@@ -1,5 +1,5 @@
 import { FileManager, MetadataCache, Notice, TFile, Vault, Workspace } from "obsidian";
-import { RelationshipCrmSettings, normalizeFolderPath } from "../settings";
+import { CrmSettings, normalizeFolderPath } from "../settings";
 import { today } from "./dates";
 import { crmId, safeFileName } from "./file-names";
 import { frontmatter } from "./frontmatter";
@@ -15,7 +15,7 @@ export class InteractionCreator {
     private workspace: Workspace,
     private metadataCache: MetadataCache,
     private fileManager: FileManager,
-    private settings: RelationshipCrmSettings
+    private settings: CrmSettings
   ) {}
 
   async createInteraction(values: EntityFormResult): Promise<void> {

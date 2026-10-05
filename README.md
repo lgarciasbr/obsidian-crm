@@ -1,6 +1,6 @@
-# Relationship CRM
+# CRM for Obsidian
 
-A local-first CRM for solo professionals to manage relationships, opportunities, and follow-ups inside Obsidian. Inside Obsidian the plugin is shown as **CRM**; the UI and generated notes are in English.
+A local-first CRM for solo professionals to manage relationships, opportunities, and follow-ups inside Obsidian. The plugin id is `crm` and it is shown in Obsidian as **CRM**.
 
 ## MVP status
 
@@ -10,7 +10,7 @@ The MVP source of truth is `MVP.md`, a private product contract kept outside thi
 
 ## v0.1 constraints
 
-Relationship CRM v0.1 is intentionally constrained:
+CRM v0.1 is intentionally constrained:
 
 - local-first;
 - no network calls;
@@ -19,12 +19,12 @@ Relationship CRM v0.1 is intentionally constrained:
 - no backend;
 - no login;
 - no sync service;
-- Markdown/frontmatter will be the source of truth for CRM records.
+- Markdown/frontmatter is the source of truth for CRM records (see the [data contract](docs/project/data-contract.md)).
 
-## Planned MVP loop
+## Core loop
 
 ```text
-register interaction → update relationship → create next action → show it on the dashboard
+log interaction → update relationship → set next action → see it on the pipeline
 ```
 
 ## Development
@@ -52,7 +52,7 @@ styles.css
 Copy those files into a test vault:
 
 ```text
-<TestVault>/.obsidian/plugins/relationship-crm/
+<TestVault>/.obsidian/plugins/crm/
 ```
 
 Then enable the plugin in Obsidian.
