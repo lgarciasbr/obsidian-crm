@@ -46,7 +46,7 @@ export class CrmRepository {
     }
 
     // Contract §3: resolve only when the name matches exactly one record.
-    // Basename takes precedence (unique key, e.g. "Empresa - Nome"); ties are
+    // Basename takes precedence (unique key, e.g. "Company - Name"); ties are
     // ambiguous and must NOT be silently resolved to "the first match".
     const records = this.listRecords(type);
     const byBasename = records.filter((record) => normalizeName(record.basename) === normalizedName);

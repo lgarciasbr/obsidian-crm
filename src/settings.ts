@@ -53,11 +53,11 @@ export class RelationshipCrmSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Relationship CRM" });
+    containerEl.createEl("h2", { text: "CRM" });
 
     new Setting(containerEl)
       .setName("CRM root folder")
-      .setDesc("Folder where Relationship CRM records will be stored.")
+      .setDesc("Folder where CRM records will be stored.")
       .addText((text) =>
         text
           .setPlaceholder(DEFAULT_SETTINGS.crmRoot)

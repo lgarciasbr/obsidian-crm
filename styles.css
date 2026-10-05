@@ -236,8 +236,8 @@
   padding: 0.35rem;
 }
 
-/* Borda envolve apenas os cards (do último card até abaixo do header),
-   como no plugin do Kanban — o nome/3 pontos/seta ficam fora da borda. */
+/* The border wraps only the cards (from below the header to the last card),
+   like the Kanban plugin — the name, menu and chevron stay outside it. */
 .relationship-crm-pipeline-column-body {
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;

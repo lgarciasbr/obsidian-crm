@@ -1,5 +1,6 @@
 import { MarkdownView, Notice, Plugin, TFile, WorkspaceLeaf } from "obsidian";
 import { EntityCreator } from "./src/crm/entity-creation";
+import { INTERACTION_KINDS } from "./src/crm/integrity";
 import { ensureCrmFolders } from "./src/crm/folders";
 import { InteractionCreator } from "./src/crm/interactions";
 import { CrmRepository } from "./src/crm/repository";
@@ -24,7 +25,7 @@ export default class RelationshipCrmPlugin extends Plugin {
   settings: RelationshipCrmSettings;
 
   async onload(): Promise<void> {
-    console.log("Loading Relationship CRM");
+    console.log("Loading CRM");
 
     await this.loadSettings();
     this.addSettingTab(new RelationshipCrmSettingTab(this.app, this));
@@ -58,11 +59,11 @@ export default class RelationshipCrmPlugin extends Plugin {
 
     this.addCommand({
       id: "open-crm",
-      name: "Open Relationship CRM",
+      name: "Open CRM",
       callback: () => this.openOrCreateCrm(),
     });
 
-    this.addRibbonIcon("filter", "Abrir Relationship CRM", () => this.openOrCreateCrm());
+    this.addRibbonIcon("filter", "Open CRM", () => this.openOrCreateCrm());
 
     this.addCommand({
       id: "initialize-crm-folders",
@@ -73,7 +74,7 @@ export default class RelationshipCrmPlugin extends Plugin {
         if (pipelineFile) {
           await this.ensurePipelineStages(pipelineFile);
         }
-        new Notice("Pastas do Relationship CRM inicializadas.");
+        new Notice("CRM folders initialized.");
       },
     });
 
@@ -139,13 +140,13 @@ export default class RelationshipCrmPlugin extends Plugin {
 
     const issues = report.records.length + (report.duplicates.length ? 1 : 0);
     new Notice(issues === 0
-      ? `CRM validado: ${report.total} registros, nenhuma violação.`
-      : `CRM validado: ${report.records.length} registro(s) com problema. Veja o relatório.`);
+      ? `CRM validated: ${report.total} records, no violations.`
+      : `CRM validated: ${report.records.length} record(s) with issues. See the report.`);
     await this.app.workspace.getLeaf("tab").openFile(file);
   }
 
   onunload(): void {
-    console.log("Unloading Relationship CRM");
+    console.log("Unloading CRM");
   }
 
   async loadSettings(): Promise<void> {
@@ -171,21 +172,21 @@ export default class RelationshipCrmPlugin extends Plugin {
   private openSetNextActionModal(): void {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new Notice("Abra uma nota CRM para definir a próxima ação.");
+      new Notice("Open a CRM note to set its next action.");
       return;
     }
 
     const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
     const type = frontmatter?.type;
     if (!["crm/person", "crm/company", "crm/opportunity"].includes(String(type))) {
-      new Notice("Esta nota não é uma pessoa, empresa ou oportunidade do CRM.");
+      new Notice("This note is not a CRM person, company, or opportunity.");
       return;
     }
 
-    new EntityModal(this.app, "Definir próxima ação", [
-      { key: "next_action", label: "Próxima ação", defaultValue: String(frontmatter?.next_action || ""), required: true },
-      { key: "next_action_date", label: "Data da próxima ação", inputType: "date", defaultValue: String(frontmatter?.next_action_date || "") },
-    ], async (values) => this.setNextAction(file, values.next_action, values.next_action_date), "Salvar próxima ação").open();
+    new EntityModal(this.app, "Set next action", [
+      { key: "next_action", label: "Next action", defaultValue: String(frontmatter?.next_action || ""), required: true },
+      { key: "next_action_date", label: "Next action date", inputType: "date", defaultValue: String(frontmatter?.next_action_date || "") },
+    ], async (values) => this.setNextAction(file, values.next_action, values.next_action_date), "Save next action").open();
   }
 
   private async setNextAction(file: TFile, nextAction: string | undefined, nextActionDate: string | undefined): Promise<void> {
@@ -201,11 +202,11 @@ export default class RelationshipCrmPlugin extends Plugin {
       const task = this.followUpTask(action, date);
       const content = await this.app.vault.read(file);
       if (!content.includes(task)) {
-        await this.app.vault.modify(file, `${content.trimEnd()}\n\n## Próxima ação\n\n${task}\n`);
+        await this.app.vault.modify(file, `${content.trimEnd()}\n\n## Next action\n\n${task}\n`);
       }
     }
 
-    new Notice("Próxima ação atualizada.");
+    new Notice("Next action updated.");
   }
 
   private followUpTask(action: string, date: string): string {
@@ -215,60 +216,60 @@ export default class RelationshipCrmPlugin extends Plugin {
   }
 
   private openCreatePersonModal(openAfterCreate = true): void {
-    new EntityModal(this.app, "Nova pessoa", [
-      { key: "name", label: "Nome", placeholder: "Maria Souza", required: true },
-      { key: "company", label: "Empresa", options: this.repository().names("crm/company"), allowCreateNew: true },
-      { key: "role", label: "Cargo", placeholder: "CEO" },
+    new EntityModal(this.app, "New person", [
+      { key: "name", label: "Name", placeholder: "Jane Doe", required: true },
+      { key: "company", label: "Company", options: this.repository().names("crm/company"), allowCreateNew: true },
+      { key: "role", label: "Role", placeholder: "CEO" },
       { key: "email", label: "E-mail" },
-      { key: "phone", label: "Telefone" },
+      { key: "phone", label: "Phone" },
       { key: "linkedin", label: "LinkedIn" },
-    ], async (values) => this.entityCreator().createPerson(values, openAfterCreate), "Criar pessoa").open();
+    ], async (values) => this.entityCreator().createPerson(values, openAfterCreate), "Create person").open();
   }
 
   private openCreateCompanyModal(openAfterCreate = true): void {
-    new EntityModal(this.app, "Nova empresa", [
-      { key: "name", label: "Nome", placeholder: "Acme", required: true },
-      { key: "site", label: "Site", placeholder: "https://example.com" },
+    new EntityModal(this.app, "New company", [
+      { key: "name", label: "Name", placeholder: "Acme", required: true },
+      { key: "site", label: "Website", placeholder: "https://example.com" },
       { key: "industry", label: "Segmento", placeholder: "Consultoria" },
-    ], async (values) => this.entityCreator().createCompany(values, openAfterCreate), "Criar empresa").open();
+    ], async (values) => this.entityCreator().createCompany(values, openAfterCreate), "Create company").open();
   }
 
   // contextual = interaction launched from a card: it is born from records that
   // already exist, so the relation fields must not offer "create new".
   private openLogInteractionModal(defaults: { person?: string; company?: string; opportunity?: string } = {}, onCreated?: () => void, contextual = false): void {
     const allowCreateNew = !contextual;
-    new EntityModal(this.app, "Registrar interação", [
-      { key: "person", label: "Pessoa", section: "Relação", defaultValue: defaults.person, options: this.repository().names("crm/person"), allowCreateNew },
-      { key: "company", label: "Empresa", section: "Relação", defaultValue: defaults.company, options: this.repository().names("crm/company"), allowCreateNew },
-      { key: "opportunity", label: "Oportunidade", section: "Relação", defaultValue: defaults.opportunity, options: this.repository().listRecords("crm/opportunity").map((record) => record.basename).sort((a, b) => a.localeCompare(b)), allowCreateNew },
-      { key: "date", label: "Data", section: "Interação", inputType: "date", defaultValue: new Date().toISOString().slice(0, 10) },
-      { key: "kind", label: "Tipo", section: "Interação", noPlaceholderOption: true, defaultValue: "ligação", options: ["ligação", "reunião", "email", "whatsapp", "linkedin", "nota", "outro"] },
-      { key: "summary", label: "Resumo", section: "Interação" },
-      { key: "next_action", label: "Próxima ação", section: "Próximo passo" },
-      { key: "next_action_date", label: "Data da próxima ação", section: "Próximo passo", inputType: "date" },
+    new EntityModal(this.app, "Log interaction", [
+      { key: "person", label: "Person", section: "Related to", defaultValue: defaults.person, options: this.repository().names("crm/person"), allowCreateNew },
+      { key: "company", label: "Company", section: "Related to", defaultValue: defaults.company, options: this.repository().names("crm/company"), allowCreateNew },
+      { key: "opportunity", label: "Opportunity", section: "Related to", defaultValue: defaults.opportunity, options: this.repository().listRecords("crm/opportunity").map((record) => record.basename).sort((a, b) => a.localeCompare(b)), allowCreateNew },
+      { key: "date", label: "Date", section: "Interaction", inputType: "date", defaultValue: new Date().toISOString().slice(0, 10) },
+      { key: "kind", label: "Kind", section: "Interaction", noPlaceholderOption: true, defaultValue: "call", options: [...INTERACTION_KINDS] },
+      { key: "summary", label: "Summary", section: "Interaction" },
+      { key: "next_action", label: "Next action", section: "Next step" },
+      { key: "next_action_date", label: "Next action date", section: "Next step", inputType: "date" },
     ], async (values) => {
       await this.interactionCreator().createInteraction(values);
       onCreated?.();
-    }, "Registrar interação").open();
+    }, "Log interaction").open();
   }
 
-  // Fonte única dos campos da oportunidade (usada por criar e editar).
+  // Single source of opportunity fields (used by create and edit).
   private opportunityFields(defaults: Record<string, string> = {}): EntityField[] {
     return [
-      { key: "name", label: "Nome da oportunidade", placeholder: "Diagnóstico operacional", required: true, defaultValue: defaults.name },
-      { key: "company", label: "Empresa", required: true, options: this.repository().names("crm/company"), allowCreateNew: true, defaultValue: defaults.company },
-      { key: "contact", label: "Contato", options: this.repository().names("crm/person"), allowCreateNew: true, defaultValue: defaults.contact },
-      { key: "value", label: "Valor", placeholder: "15000", defaultValue: defaults.value },
-      { key: "stage", label: "Etapa", options: this.pipelineStages(), defaultValue: defaults.stage || this.pipelineStages()[0], noPlaceholderOption: true },
-      { key: "notes", label: "Observação", placeholder: "Notas livres sobre a oportunidade", defaultValue: defaults.notes },
+      { key: "name", label: "Opportunity name", placeholder: "Operations assessment", required: true, defaultValue: defaults.name },
+      { key: "company", label: "Company", required: true, options: this.repository().names("crm/company"), allowCreateNew: true, defaultValue: defaults.company },
+      { key: "contact", label: "Contact", options: this.repository().names("crm/person"), allowCreateNew: true, defaultValue: defaults.contact },
+      { key: "value", label: "Value", placeholder: "15000", defaultValue: defaults.value },
+      { key: "stage", label: "Stage", options: this.pipelineStages(), defaultValue: defaults.stage || this.pipelineStages()[0], noPlaceholderOption: true },
+      { key: "notes", label: "Notes", placeholder: "Free-form notes about the opportunity", defaultValue: defaults.notes },
     ];
   }
 
   private openCreateOpportunityModal(stage = "lead", openAfterCreate = true, onCreated?: () => void): void {
-    new EntityModal(this.app, "Nova oportunidade", this.opportunityFields({ stage }), async (values) => {
+    new EntityModal(this.app, "New opportunity", this.opportunityFields({ stage }), async (values) => {
       await this.entityCreator().createOpportunity(values, openAfterCreate);
       onCreated?.();
-    }, "Criar oportunidade").open();
+    }, "Create opportunity").open();
   }
 
   private openEditOpportunityModal(record: { path: string; name: string; frontmatter: Record<string, unknown> }, onEdited?: () => void): void {
@@ -281,10 +282,10 @@ export default class RelationshipCrmPlugin extends Plugin {
       stage: String(fm.stage || ""),
       notes: String(fm.notes || ""),
     };
-    new EntityModal(this.app, "Editar oportunidade", this.opportunityFields(defaults), async (values) => {
+    new EntityModal(this.app, "Edit opportunity", this.opportunityFields(defaults), async (values) => {
       const file = this.app.vault.getAbstractFileByPath(record.path);
       if (!(file instanceof TFile)) {
-        new Notice("Arquivo da oportunidade não encontrado.");
+        new Notice("Opportunity file not found.");
         return;
       }
       const repository = this.repository();
@@ -299,15 +300,15 @@ export default class RelationshipCrmPlugin extends Plugin {
         frontmatter.notes = values.notes?.trim() || "";
       });
       await this.renameOpportunityFile(file, this.cleanLink(companyLink), newName);
-      new Notice(`Oportunidade atualizada: ${newName}`);
+      new Notice(`Opportunity updated: ${newName}`);
       onEdited?.();
-    }, "Salvar").open();
+    }, "Save").open();
   }
 
-  // Renomeia o arquivo da oportunidade (Empresa - Nome) e, via fileManager,
-  // o Obsidian atualiza automaticamente todos os wikilinks que a referenciam.
+  // Renames the opportunity file (Company - Name); through fileManager,
+  // Obsidian updates every wikilink that references it.
   private async renameOpportunityFile(file: TFile, companyLabel: string, name: string): Promise<void> {
-    const desiredBase = `${safeFileName(companyLabel || "Sem empresa")} - ${safeFileName(name)}`;
+    const desiredBase = `${safeFileName(companyLabel || "No company")} - ${safeFileName(name)}`;
     if (file.basename === desiredBase) {
       return;
     }
@@ -320,7 +321,7 @@ export default class RelationshipCrmPlugin extends Plugin {
     }
     await this.app.fileManager.renameFile(file, target);
 
-    // Atualiza o título H1 no corpo da nota.
+    // Update the H1 title in the note body.
     const renamed = this.app.vault.getAbstractFileByPath(target);
     if (renamed instanceof TFile) {
       const content = await this.app.vault.read(renamed);
@@ -359,17 +360,17 @@ export default class RelationshipCrmPlugin extends Plugin {
   }
 
   private async openOrCreateCrm(): Promise<void> {
-    // Garante a estrutura do CRM e abre a CRM Home baseada no arquivo Pipeline.md.
+    // Ensure the CRM structure exists and open the CRM view backed by Pipeline.md.
     await ensureCrmFolders(this.app.vault, this.settings.crmRoot);
     const file = await ensurePipelineFile(this.app.vault, this.settings);
     if (!file) {
-      new Notice("Não foi possível criar CRM/Pipeline.md.");
+      new Notice("Could not create CRM/Pipeline.md.");
       return;
     }
 
     await this.ensurePipelineStages(file);
 
-    // Se a CRM Home já estiver aberta para este arquivo, apenas foca nela.
+    // If the CRM view is already open for this file, just focus it.
     const existing = this.app.workspace.getLeavesOfType(CRM_VIEW_TYPE)
       .find((leaf) => (leaf.view as { file?: { path: string } })?.file?.path === file.path);
     if (existing) {

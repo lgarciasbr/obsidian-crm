@@ -9,7 +9,7 @@ export class EntityModal extends Modal {
     private title: string,
     private fields: EntityField[],
     private onSubmit: (values: EntityFormResult) => Promise<void>,
-    private submitLabel = "Criar"
+    private submitLabel = "Create"
   ) {
     super(app);
   }
@@ -47,7 +47,7 @@ export class EntityModal extends Modal {
           .onClick(async () => {
             const missing = this.fields.find((field) => field.required && !this.valueFor(field).trim());
             if (missing) {
-              new Notice(`${missing.label} é obrigatório.`);
+              new Notice(`${missing.label} is required.`);
               return;
             }
 
@@ -83,7 +83,7 @@ export class EntityModal extends Modal {
     if (hasOptions || !field.allowCreateNew) {
       new Setting(contentEl)
         .setName(field.label)
-        .setDesc(field.allowCreateNew ? existingRecordDescription(field) : (field.noPlaceholderOption ? "" : "Selecionar uma opção."))
+        .setDesc(field.allowCreateNew ? existingRecordDescription(field) : (field.noPlaceholderOption ? "" : "Select an option."))
         .addDropdown((dropdown) => {
           if (!field.noPlaceholderOption) {
             dropdown.addOption("", field.placeholder || "Selecionar...");
@@ -108,8 +108,8 @@ export class EntityModal extends Modal {
     }
 
     new Setting(contentEl)
-      .setName(`Criar ${field.label.toLowerCase()}`)
-      .setDesc(hasOptions ? "Use quando o registro ainda não existe na lista acima." : "Nenhum registro existente ainda.")
+      .setName(`Create ${field.label.toLowerCase()}`)
+      .setDesc(hasOptions ? "Use when the record is not in the list above yet." : "No existing records yet.")
       .addText((text) => {
         text.setPlaceholder(field.placeholder || "");
         text.onChange((value) => {
@@ -127,5 +127,5 @@ export class EntityModal extends Modal {
 }
 
 function existingRecordDescription(field: EntityField): string {
-  return field.options?.length ? "Selecionar existente." : "Nenhum registro existente ainda.";
+  return field.options?.length ? "Select an existing record." : "No existing records yet.";
 }

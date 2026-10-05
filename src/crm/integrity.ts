@@ -1,4 +1,4 @@
-// Pure integrity rules for the Relationship CRM data contract.
+// Pure integrity rules for the CRM data contract.
 // This module MUST NOT import from "obsidian" so it can be unit-tested in Node.
 // See docs/project/data-contract.md.
 
@@ -15,13 +15,13 @@ export const DEFAULT_STAGES = [
 ] as const;
 
 export const INTERACTION_KINDS = [
-  "ligação",
-  "reunião",
+  "call",
+  "meeting",
   "email",
   "whatsapp",
   "linkedin",
-  "nota",
-  "outro",
+  "note",
+  "other",
 ] as const;
 
 // Fields written by earlier versions but removed from the contract. Their

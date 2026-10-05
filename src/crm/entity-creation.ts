@@ -28,7 +28,7 @@ export class EntityCreator {
     const personFile = await this.createPersonRecord({ ...values, company }, openFile);
     const companyRecord = repository.findByName("crm/company", companyName || values.company_new);
     if (companyRecord) {
-      await this.addLinkToRecordSection(companyRecord.path, "Pessoas", wikilink(personFile.basename));
+      await this.addLinkToRecordSection(companyRecord.path, "People", wikilink(personFile.basename));
     }
   }
 
@@ -68,7 +68,7 @@ export class EntityCreator {
       next_action: "",
       next_action_date: "",
       tags: ["crm/opportunity"],
-    }, `# ${company} - ${name}\n\n## Empresa\n\n${refreshedRepository.resolveLinkOrText("crm/company", company) || ""}\n\n## Contato\n\n${refreshedRepository.resolveLinkOrText("crm/person", contact) || ""}\n\n## Situação\n\n## Dor percebida\n\n## Proposta de valor\n\n## Próximos passos\n\n## Histórico\n`);
+    }, `# ${company} - ${name}\n\n## Company\n\n${refreshedRepository.resolveLinkOrText("crm/company", company) || ""}\n\n## Contact\n\n${refreshedRepository.resolveLinkOrText("crm/person", contact) || ""}\n\n## Situation\n\n## Pain points\n\n## Value proposition\n\n## Next steps\n\n## History\n`);
 
     const opportunityFile = await this.createAndMaybeOpen(path, content, openFile);
     // R7 backlink symmetry: link the opportunity back from both the company
@@ -100,7 +100,7 @@ export class EntityCreator {
       next_action: "",
       next_action_date: "",
       tags: ["crm/person"],
-    }, `# ${name}\n\n## Contexto\n\n## Oportunidades\n\n## Histórico\n`);
+    }, `# ${name}\n\n## Context\n\n## Opportunities\n\n## History\n`);
 
     return this.createAndMaybeOpen(path, content, openFile);
   }
@@ -119,7 +119,7 @@ export class EntityCreator {
       next_action: "",
       next_action_date: "",
       tags: ["crm/company"],
-    }, `# ${name}\n\n## Contexto\n\n## Pessoas\n\n## Oportunidades\n\n## Histórico\n`);
+    }, `# ${name}\n\n## Context\n\n## People\n\n## Opportunities\n\n## History\n`);
 
     return this.createAndMaybeOpen(path, content, openFile);
   }

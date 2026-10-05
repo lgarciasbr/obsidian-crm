@@ -86,11 +86,16 @@ test("opportunity stage/status validated against contract", () => {
   assert.equal(bad.filter((x) => x.code === "BAD_ENUM").length, 1);
 });
 
-test("interaction requires a valid date and known (pt-BR) kind", () => {
+test("interaction requires a valid date and known kind", () => {
   const ok = validateFrontmatter("crm/interaction", {
-    type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "ligação",
+    type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "call",
   });
   assert.deepEqual(ok, []);
+  // Kinds are English since the UI moved to English; legacy pt-BR values are flagged.
+  const legacy = validateFrontmatter("crm/interaction", {
+    type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "ligação",
+  });
+  assert.ok(legacy.some((x) => x.code === "BAD_ENUM" && x.field === "kind"));
   const bad = validateFrontmatter("crm/interaction", {
     type: "crm/interaction", crm_id: "i-1", date: "", kind: "zap",
   });
@@ -100,7 +105,7 @@ test("interaction requires a valid date and known (pt-BR) kind", () => {
 
 test("deprecated leftover fields are flagged", () => {
   const v = validateFrontmatter("crm/interaction", {
-    type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "nota", outcome: "algo",
+    type: "crm/interaction", crm_id: "i-1", date: "2026-07-07", kind: "note", outcome: "something",
   });
   assert.ok(v.some((x) => x.code === "DEPRECATED_FIELD" && x.field === "outcome"));
   const p = validateFrontmatter("crm/person", {

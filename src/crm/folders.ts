@@ -28,7 +28,7 @@ async function ensurePipelineFile(vault: Vault, root: string): Promise<TFile | n
     return existing;
   }
 
-  const content = "---\ntype: crm/pipeline\nstages:\n  - lead\n  - conversation\n  - proposal\n  - negotiation\n  - won\n  - lost\n  - paused\n---\n\n# Pipeline\n\nEste arquivo ancora a visualização visual do pipeline do Relationship CRM.\n";
+  const content = "---\ntype: crm/pipeline\nstages:\n  - lead\n  - conversation\n  - proposal\n  - negotiation\n  - won\n  - lost\n  - paused\n---\n\n# Pipeline\n\nThis file anchors the CRM pipeline board.\n";
   const created = await vault.create(path, content);
   return created instanceof TFile ? created : null;
 }

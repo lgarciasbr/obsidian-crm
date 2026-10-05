@@ -79,7 +79,8 @@ Four record types, identified by the `type` frontmatter key:
 
 ### crm/interaction
 - `date` (ISO date, required)
-- `kind` ∈ {`ligação`, `reunião`, `email`, `whatsapp`, `linkedin`, `nota`, `outro`}
+- `kind` ∈ {`call`, `meeting`, `email`, `whatsapp`, `linkedin`, `note`, `other`}
+  (until 2026-10-05 the pt-BR values `ligação`, `reunião`, `nota`, `outro` were used; they are now flagged as `BAD_ENUM`)
 - `people` (list of wikilinks), `company` (wikilink or empty),
   `opportunity` (wikilink or empty)
 - `outcome`, `next_action`, `next_action_date`

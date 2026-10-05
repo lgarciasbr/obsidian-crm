@@ -1,6 +1,6 @@
 # Relationship CRM
 
-A local-first CRM for solo professionals to manage relationships, opportunities, and follow-ups inside Obsidian.
+A local-first CRM for solo professionals to manage relationships, opportunities, and follow-ups inside Obsidian. Inside Obsidian the plugin is shown as **CRM**; the UI and generated notes are in English.
 
 ## MVP status
 
@@ -59,7 +59,7 @@ Then enable the plugin in Obsidian.
 
 ## Commands
 
-- `Open Relationship CRM` — open the CRM view (pipeline, contacts, companies)
+- `Open CRM` — open the CRM view (Pipeline, Companies, Contacts)
 - `Initialize CRM folders`
 - `Create person`, `Create company`, `Create opportunity`
 - `Log interaction`

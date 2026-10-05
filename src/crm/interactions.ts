@@ -22,7 +22,7 @@ export class InteractionCreator {
     await ensureCrmFolders(this.vault, this.settings.crmRoot);
 
     const date = values.date?.trim() || today();
-    const kind = values.kind?.trim() || "nota";
+    const kind = values.kind?.trim() || "note";
     const person = values.person?.trim() || "";
     const company = values.company?.trim() || "";
     const opportunity = values.opportunity?.trim() || "";
@@ -43,7 +43,7 @@ export class InteractionCreator {
       next_action: values.next_action,
       next_action_date: values.next_action_date,
       tags: ["crm/interaction"],
-    }, `# ${title}\n\n## Resumo\n\n${values.summary || ""}\n\n## Pontos importantes\n\n## Compromissos\n\n## Próxima ação\n\n${task || values.next_action || ""}\n`);
+    }, `# ${title}\n\n## Summary\n\n${values.summary || ""}\n\n## Key points\n\n## Commitments\n\n## Next action\n\n${task || values.next_action || ""}\n`);
 
     const file = await this.vault.create(path, content) as TFile;
     const failedUpdates = await this.updateRelatedRecords(repository, {
@@ -97,7 +97,7 @@ export class InteractionCreator {
   private async addHistoryLink(record: CrmRecord, interactionLink: string): Promise<void> {
     const file = this.vault.getAbstractFileByPath(record.path);
     if (file instanceof TFile) {
-      await addLinkToSection(this.vault, file, "Histórico", interactionLink);
+      await addLinkToSection(this.vault, file, "History", interactionLink);
     }
   }
 

@@ -45,6 +45,7 @@ Rules:
 | TS-015 | Pipeline creation flow and formatting defaults | DS-004 | 🟩 Done |
 | TS-016 | Markdown body relationship sync | DS-003 | 🟩 Done |
 | TS-017 | CRM Home with tabs | DS-004 | 🟩 Done (baseline) |
+| TS-018 | English UI and "CRM" display name | — (post-baseline) | 🟩 Done |
 
 ## Baseline — 2026-10-05
 
