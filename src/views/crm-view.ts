@@ -3,6 +3,7 @@ import { CrmSettings, normalizeFolderPath, resolveLocale } from "../settings";
 import { ensureCrmFolders } from "../crm/folders";
 import { CrmRecord, CrmRepository } from "../crm/repository";
 import { DEFAULT_STAGES } from "../crm/integrity";
+import { addStage, formatDate, formatMoney, frontmatterList, moveStage, normalizeStage, removeStage, renameStage } from "../crm/pipeline";
 
 export const CRM_VIEW_TYPE = "crm-view";
 
@@ -402,9 +403,9 @@ export class CrmView extends TextFileView {
 
     this.renderCardRow(card, "building-2", company, company ? () => this.openRelatedRecord("crm/company", company) : undefined);
     this.renderCardRow(card, "user", contact, contact ? () => this.openRelatedRecord("crm/person", contact) : undefined);
-    this.renderCardRow(card, "circle-dollar-sign", value ? formatMoney(value, this.settings) : "");
+    this.renderCardRow(card, "circle-dollar-sign", value ? formatMoney(value, this.settings.defaultCurrency, resolveLocale(this.settings)) : "");
     this.renderCardRow(card, "activity", nextAction);
-    this.renderCardRow(card, "calendar-days", formatDate(nextActionDate, this.settings));
+    this.renderCardRow(card, "calendar-days", formatDate(nextActionDate, resolveLocale(this.settings)));
     this.renderCardRow(card, "sticky-note", notes);
 
     const interactionButton = card.createEl("button", {
@@ -484,29 +485,9 @@ export class CrmView extends TextFileView {
   private frontmatterList(key: string): string[] | null {
     // Read the list straight from the file content (this.dataValue): the
     // metadataCache may not have parsed the file yet when the vault reopens.
-    const data = this.dataValue || "";
-    const block = data.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    if (block) {
-      const lines = block[1].split(/\r?\n/);
-      const out: string[] = [];
-      let capturing = false;
-      for (const line of lines) {
-        if (!capturing) {
-          if (new RegExp(`^${key}\\s*:\\s*$`).test(line)) {
-            capturing = true;
-          }
-          continue;
-        }
-        const item = line.match(/^\s*-\s+(.*)$/);
-        if (item) {
-          out.push(item[1].trim().replace(/^["']|["']$/g, ""));
-        } else if (/^\S/.test(line)) {
-          break;
-        }
-      }
-      if (capturing) {
-        return out;
-      }
+    const fromContent = frontmatterList(this.dataValue || "", key);
+    if (fromContent) {
+      return fromContent;
     }
 
     // Fall back to the cache (file already indexed).
@@ -567,16 +548,7 @@ export class CrmView extends TextFileView {
       return;
     }
 
-    const stages = this.pipelineStages();
-    const sourceIndex = stages.indexOf(sourceStage);
-    const targetIndex = stages.indexOf(targetStage);
-    if (sourceIndex === -1 || targetIndex === -1) {
-      return;
-    }
-
-    const reordered = [...stages];
-    const [moved] = reordered.splice(sourceIndex, 1);
-    reordered.splice(targetIndex, 0, moved);
+    const reordered = moveStage(this.pipelineStages(), sourceStage, targetStage);
 
     this.stagesOverride = reordered;
     await this.updatePipelineFrontmatter((frontmatter) => {
@@ -591,26 +563,22 @@ export class CrmView extends TextFileView {
     }
 
     new PipelineStageModal(this.app, async (label) => {
-      const nextLabel = label.trim();
-      if (!nextLabel || normalizeStage(nextLabel) === normalizeStage(stage)) {
+      const result = renameStage(this.pipelineStages(), stage, label);
+      if ("error" in result) {
+        if (result.error === "exists") {
+          new Notice("This stage already exists.");
+        }
         return;
       }
 
-      const stages = this.pipelineStages();
-      if (stages.some((item) => normalizeStage(item) === normalizeStage(nextLabel))) {
-        new Notice("This stage already exists.");
-        return;
-      }
-
-      const nextStage = normalizeStage(nextLabel);
-      const nextStages = stages.map((item) => item === stage ? nextLabel : item);
-      this.stagesOverride = nextStages;
+      const nextStage = result.to;
+      this.stagesOverride = result.stages;
       await this.updatePipelineFrontmatter((frontmatter) => {
-        frontmatter.stages = nextStages;
+        frontmatter.stages = result.stages;
       });
 
       const opportunities = this.repository.listRecords("crm/opportunity")
-        .filter((record) => this.recordStage(record) === normalizeStage(stage));
+        .filter((record) => this.recordStage(record) === result.from);
       const failed: string[] = [];
       for (const record of opportunities) {
         const file = this.app.vault.getAbstractFileByPath(record.path);
@@ -645,7 +613,7 @@ export class CrmView extends TextFileView {
       return;
     }
 
-    const stages = this.pipelineStages().filter((item) => item !== stage);
+    const stages = removeStage(this.pipelineStages(), stage);
     this.stagesOverride = stages;
     await this.updatePipelineFrontmatter((frontmatter) => {
       frontmatter.stages = stages;
@@ -659,18 +627,15 @@ export class CrmView extends TextFileView {
     }
 
     new PipelineStageModal(this.app, async (label) => {
-      const nextLabel = label.trim();
-      if (!nextLabel) {
+      const result = addStage(this.pipelineStages(), label);
+      if ("error" in result) {
+        if (result.error === "exists") {
+          new Notice("This stage already exists.");
+        }
         return;
       }
 
-      const stages = this.pipelineStages();
-      if (stages.some((item) => normalizeStage(item) === normalizeStage(nextLabel))) {
-        new Notice("This stage already exists.");
-        return;
-      }
-
-      const nextStages = [...stages, nextLabel];
+      const nextStages = result.stages;
       this.stagesOverride = nextStages;
       await this.updatePipelineFrontmatter((frontmatter) => {
         frontmatter.stages = nextStages;
@@ -841,44 +806,6 @@ function stringField(record: CrmRecord, field: string): string {
   return "";
 }
 
-function normalizeStage(stage: string): string {
-  const normalized = stage.trim().toLowerCase();
-  return normalized || "lead";
-}
-
 function cleanLink(value: string): string {
   return value.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
-}
-
-function formatMoney(value: string, settings: CrmSettings): string {
-  if (!value) {
-    return "Value";
-  }
-
-  const number = Number(value.replace(/[^\d,.-]/g, "").replace(".", "").replace(",", "."));
-  if (Number.isNaN(number)) {
-    return value;
-  }
-
-  const currency = (settings.defaultCurrency || "BRL").toUpperCase();
-  try {
-    return new Intl.NumberFormat(resolveLocale(settings), { style: "currency", currency }).format(number);
-  } catch (_error) {
-    return `${currency} ${number}`;
-  }
-}
-
-// Storage stays ISO (YYYY-MM-DD); only the on-card display is localized.
-function formatDate(iso: string, settings: CrmSettings): string {
-  const clean = (iso || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
-    return clean;
-  }
-  const [y, m, d] = clean.split("-").map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  try {
-    return new Intl.DateTimeFormat(resolveLocale(settings), { timeZone: "UTC" }).format(date);
-  } catch (_error) {
-    return clean;
-  }
 }

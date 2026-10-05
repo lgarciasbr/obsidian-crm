@@ -131,7 +131,8 @@ export function validateFrontmatter(
     case "crm/company":
       break;
     case "crm/opportunity":
-      if (!enumOk(fm.stage === undefined || fm.stage === null ? fm.stage : String(fm.stage).toLowerCase(), stages)) {
+      // Stage labels keep the user's casing in Pipeline.md; records store them lowercase.
+      if (!enumOk(fm.stage === undefined || fm.stage === null ? fm.stage : String(fm.stage).toLowerCase(), stages.map((stage) => stage.trim().toLowerCase()))) {
         violations.push({ code: "BAD_ENUM", field: "stage", message: `Invalid stage: ${String(fm.stage)}` });
       }
       if (!dateOk(fm.created)) {
