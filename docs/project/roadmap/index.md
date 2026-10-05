@@ -50,7 +50,6 @@ Rules:
 
 Everything above was closed by Navigator decision as the v0.1 baseline. New work starts from here as new stories; DS-005 is the next Delivery Story. Known open items carried forward:
 
-- TS-017 Dashboard tab is a placeholder — define what the dashboard should be.
 - TD-001 (deferred debt): next action comes only from opportunity frontmatter.
 - TS-014 and TS-017 were closed without manual Navigator validation.
 

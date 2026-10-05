@@ -16,13 +16,15 @@ export async function ensurePipelineFile(vault: Vault, settings: RelationshipCrm
   return file instanceof TFile ? file : null;
 }
 
+type CrmTab = "pipeline" | "companies" | "contacts";
+
 export class CrmView extends TextFileView {
   private dataValue = "";
   private stagesOverride: string[] | null = null;
   private recordStageOverrides = new Map<string, string>();
   private collapsedStages = new Set<string>();
   private collapsedLoaded = false;
-  private activeTab: "dashboard" | "companies" | "contacts" | "pipeline" = "pipeline";
+  private activeTab: CrmTab = "pipeline";
   private contactsSearch = "";
 
   constructor(
@@ -107,11 +109,6 @@ export class CrmView extends TextFileView {
       return;
     }
 
-    if (this.activeTab === "dashboard") {
-      this.renderDashboardPlaceholder(contentEl);
-      return;
-    }
-
     const opportunities = this.repository.listRecords("crm/opportunity");
     const stages = this.pipelineStages();
     const board = contentEl.createDiv({ cls: "relationship-crm-pipeline-board" });
@@ -192,13 +189,12 @@ export class CrmView extends TextFileView {
 
 
   private renderTabs(container: HTMLElement): void {
-    this.renderTabButton(container, "Dashboard", "dashboard");
+    this.renderTabButton(container, "Pipeline", "pipeline");
     this.renderTabButton(container, "Empresas", "companies");
     this.renderTabButton(container, "Contatos", "contacts");
-    this.renderTabButton(container, "Pipeline", "pipeline");
   }
 
-  private renderTabButton(container: HTMLElement, label: string, tab: "dashboard" | "companies" | "contacts" | "pipeline"): void {
+  private renderTabButton(container: HTMLElement, label: string, tab: CrmTab): void {
     const active = this.activeTab === tab;
     const button = container.createEl("button", {
       text: label,
@@ -210,12 +206,6 @@ export class CrmView extends TextFileView {
       this.contactsSearch = "";
       this.render();
     });
-  }
-
-  private renderDashboardPlaceholder(container: HTMLElement): void {
-    const placeholder = container.createDiv({ cls: "relationship-crm-empty-state" });
-    placeholder.createEl("h3", { text: "Dashboard" });
-    placeholder.createEl("p", { text: "A visão de dashboard será implementada no próximo refinamento." });
   }
 
   private renderContextualActions(_container: HTMLElement): void {

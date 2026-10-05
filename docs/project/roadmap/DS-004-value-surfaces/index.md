@@ -31,7 +31,7 @@ The plugin exposes MVP value surfaces that turn CRM records and follow-up metada
 | TS-013 | Kanban-style pipeline editing | Technical Story | Stages live in `Pipeline.md`; cards and columns support drag-and-drop; stages can be created, renamed and deleted. | 🟩 Done |
 | TS-014 | Remove dashboard and implement Set next action | Technical Story | Rejected Attention Dashboard is removed; `Set next action` updates the active CRM note. | 🟩 Done |
 | TS-015 | Pipeline creation flow and formatting defaults | Technical Story | Board stays open after creation, BRL formats as pt-BR, empty relationship fields show no fake suggestions. | 🟩 Done |
-| TS-017 | CRM Home with tabs | Technical Story | Single CRM view with Pipeline, Contatos, Empresas and a placeholder Dashboard tab. | 🟩 Done |
+| TS-017 | CRM Home with tabs | Technical Story | Single CRM view with Pipeline, Empresas and Contatos tabs. | 🟩 Done |
 
 ## Navigator Revision
 
