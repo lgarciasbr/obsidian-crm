@@ -8,6 +8,9 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "tsc -p tsconfig.test.json && node --test \"dist-test/tests/**/*.test.js\""
   },
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "obsidian",
     "obsidian-plugin",
