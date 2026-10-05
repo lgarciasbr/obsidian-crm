@@ -158,7 +158,7 @@ export default class CrmPlugin extends Plugin {
   }
 
   private entityCreator(): EntityCreator {
-    return new EntityCreator(this.app.vault, this.app.workspace, this.app.metadataCache, this.settings);
+    return new EntityCreator(this.app.vault, this.app.workspace, this.app.metadataCache, this.app.fileManager, this.settings);
   }
 
   private repository(): CrmRepository {
@@ -166,7 +166,7 @@ export default class CrmPlugin extends Plugin {
   }
 
   private interactionCreator(): InteractionCreator {
-    return new InteractionCreator(this.app.vault, this.app.workspace, this.app.metadataCache, this.app.fileManager, this.settings);
+    return new InteractionCreator(this.app.vault, this.app.workspace, this.app.metadataCache, this.app.fileManager, this.settings, this.entityCreator());
   }
 
   private openSetNextActionModal(): void {
@@ -241,7 +241,7 @@ export default class CrmPlugin extends Plugin {
     new EntityModal(this.app, "Log interaction", [
       { key: "person", label: "Person", section: "Related to", defaultValue: defaults.person, options: this.repository().names("crm/person"), allowCreateNew },
       { key: "company", label: "Company", section: "Related to", defaultValue: defaults.company, options: this.repository().names("crm/company"), allowCreateNew },
-      { key: "opportunity", label: "Opportunity", section: "Related to", defaultValue: defaults.opportunity, options: this.repository().listRecords("crm/opportunity").map((record) => record.basename).sort((a, b) => a.localeCompare(b)), allowCreateNew },
+      { key: "opportunity", label: "Opportunity", section: "Related to", defaultValue: defaults.opportunity, options: this.repository().listRecords("crm/opportunity").map((record) => record.basename).sort((a, b) => a.localeCompare(b)) },
       { key: "date", label: "Date", section: "Interaction", inputType: "date", defaultValue: new Date().toISOString().slice(0, 10) },
       { key: "kind", label: "Kind", section: "Interaction", noPlaceholderOption: true, defaultValue: "call", options: [...INTERACTION_KINDS] },
       { key: "summary", label: "Summary", section: "Interaction" },
@@ -288,48 +288,10 @@ export default class CrmPlugin extends Plugin {
         new Notice("Opportunity file not found.");
         return;
       }
-      const repository = this.repository();
-      const newName = values.name?.trim() || record.name;
-      const companyLink = repository.resolveLinkOrText("crm/company", values.company);
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        frontmatter.name = newName;
-        frontmatter.company = companyLink;
-        frontmatter.contact = repository.resolveLinkOrText("crm/person", values.contact);
-        frontmatter.value = values.value?.trim() || "";
-        frontmatter.stage = (values.stage?.trim() || "new").toLowerCase();
-        frontmatter.notes = values.notes?.trim() || "";
-      });
-      await this.renameOpportunityFile(file, this.cleanLink(companyLink), newName);
-      new Notice(`Opportunity updated: ${newName}`);
+      const updated = await this.entityCreator().updateOpportunity(file, values);
+      new Notice(`Opportunity updated: ${updated.basename}`);
       onEdited?.();
     }, "Save").open();
-  }
-
-  // Renames the opportunity file (Company - Name); through fileManager,
-  // Obsidian updates every wikilink that references it.
-  private async renameOpportunityFile(file: TFile, companyLabel: string, name: string): Promise<void> {
-    const desiredBase = `${safeFileName(companyLabel || "No company")} - ${safeFileName(name)}`;
-    if (file.basename === desiredBase) {
-      return;
-    }
-    const dir = file.parent?.path ?? normalizeFolderPath(this.settings.crmRoot) + "/Opportunities";
-    let target = `${dir}/${desiredBase}.md`;
-    let counter = 2;
-    while (this.app.vault.getAbstractFileByPath(target) && target !== file.path) {
-      target = `${dir}/${desiredBase} ${counter}.md`;
-      counter += 1;
-    }
-    await this.app.fileManager.renameFile(file, target);
-
-    // Update the H1 title in the note body.
-    const renamed = this.app.vault.getAbstractFileByPath(target);
-    if (renamed instanceof TFile) {
-      const content = await this.app.vault.read(renamed);
-      const updated = content.replace(/^#\s+.*$/m, `# ${desiredBase}`);
-      if (updated !== content) {
-        await this.app.vault.modify(renamed, updated);
-      }
-    }
   }
 
   private async ensurePipelineStages(file: { path: string }): Promise<void> {

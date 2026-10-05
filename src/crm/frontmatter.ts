@@ -5,7 +5,7 @@ export function frontmatter(data: Record<string, string | string[]>, body: strin
         return `${key}:\n${value.map((item) => `  - ${quoteYaml(item)}`).join("\n")}`;
       }
 
-      return `${key}: ${quoteYaml(value || "")}`;
+      return value ? `${key}: ${quoteYaml(value)}` : `${key}:`;
     })
     .join("\n");
 

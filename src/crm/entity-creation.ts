@@ -1,34 +1,35 @@
-import { MetadataCache, Notice, TFile, Vault, Workspace } from "obsidian";
+import { FileManager, MetadataCache, Notice, TFile, Vault, Workspace } from "obsidian";
 import { CrmSettings, normalizeFolderPath } from "../settings";
 import { today } from "./dates";
 import { safeFileName, crmId } from "./file-names";
-import { frontmatter, wikilink } from "./frontmatter";
+import { frontmatter } from "./frontmatter";
 import { EntityFormResult } from "./types";
 import { ensureCrmFolders } from "./folders";
-import { CrmRepository } from "./repository";
-import { addLinkToSection } from "./markdown-sections";
+import { CrmRecordType, CrmRepository } from "./repository";
+import { addLinkToSection, removeLinkFromSection, setSectionBodyInFile } from "./markdown-sections";
+
+// A CRM record the current flow can link to. `file` is the actual note, so
+// links and backlinks never depend on the metadata cache having indexed a
+// note that was created a moment ago.
+export interface EntityRef {
+  link: string;
+  file: TFile;
+}
 
 export class EntityCreator {
   constructor(
     private vault: Vault,
     private workspace: Workspace,
     private metadataCache: MetadataCache,
+    private fileManager: FileManager,
     private settings: CrmSettings
   ) {}
 
   async createPerson(values: EntityFormResult, openFile = true): Promise<void> {
-    const companyName = relatedValue(values, "company");
-    const createCompany = Boolean(values.company_new?.trim());
-    if (createCompany) {
-      await this.createCompanyRecord({ name: values.company_new.trim() }, false);
-    }
-
-    const repository = this.repository();
-    const company = createCompany ? wikilink(values.company_new) : repository.resolveLinkOrText("crm/company", companyName);
-    const personFile = await this.createPersonRecord({ ...values, company }, openFile);
-    const companyRecord = repository.findByName("crm/company", companyName || values.company_new);
-    if (companyRecord) {
-      await this.addLinkToRecordSection(companyRecord.path, "People", wikilink(personFile.basename));
+    const company = await this.resolveCompany(values, "company");
+    const person = await this.createPersonRecord({ ...values, company: company?.link ?? relatedValue(values, "company") }, openFile);
+    if (company) {
+      await addLinkToSection(this.vault, company.file, "People", linkTo(person));
     }
   }
 
@@ -37,29 +38,20 @@ export class EntityCreator {
   }
 
   async createOpportunity(values: EntityFormResult, openFile = true): Promise<void> {
-    const company = relatedValue(values, "company");
-    const contact = relatedValue(values, "contact");
-    const createCompany = Boolean(values.company_new?.trim());
-    const createContact = Boolean(values.contact_new?.trim());
-
-    if (createCompany) {
-      await this.createCompanyRecord({ name: values.company_new.trim() }, false);
-    }
-
-    if (createContact) {
-      await this.createPersonRecord({ name: values.contact_new.trim() }, false);
-    }
+    const company = await this.resolveCompany(values, "company");
+    const contact = await this.resolvePerson(values, "contact", company);
+    const companyValue = company?.link ?? relatedValue(values, "company");
+    const contactValue = contact?.link ?? relatedValue(values, "contact");
+    const companyLabel = company?.file.basename ?? relatedValue(values, "company");
 
     const name = values.name.trim();
-    const fileName = `${safeFileName(company)} - ${safeFileName(name)}.md`;
-    const path = await this.nextAvailablePath(`Opportunities/${fileName}`);
-    const refreshedRepository = this.repository();
+    const path = await this.nextAvailablePath(`Opportunities/${safeFileName(companyLabel)} - ${safeFileName(name)}.md`);
     const content = frontmatter({
       type: "crm/opportunity",
-      crm_id: crmId("opportunity", `${company}-${name}`),
+      crm_id: crmId("opportunity", `${companyLabel}-${name}`),
       name,
-      company: createCompany ? wikilink(values.company_new) : refreshedRepository.resolveLinkOrText("crm/company", company),
-      contact: createContact ? wikilink(values.contact_new) : refreshedRepository.resolveLinkOrText("crm/person", contact),
+      company: companyValue,
+      contact: contactValue,
       stage: values.stage || "lead",
       value: values.value,
       notes: values.notes,
@@ -68,19 +60,126 @@ export class EntityCreator {
       next_action: "",
       next_action_date: "",
       tags: ["crm/opportunity"],
-    }, `# ${company} - ${name}\n\n## Company\n\n${refreshedRepository.resolveLinkOrText("crm/company", company) || ""}\n\n## Contact\n\n${refreshedRepository.resolveLinkOrText("crm/person", contact) || ""}\n\n## Situation\n\n## Pain points\n\n## Value proposition\n\n## Next steps\n\n## History\n`);
+    }, opportunityBody(`${companyLabel} - ${name}`, companyValue, contactValue));
 
-    const opportunityFile = await this.createAndMaybeOpen(path, content, openFile);
-    // R7 backlink symmetry: link the opportunity back from both the company
-    // and the contact person, under their "Opportunities" section.
-    const companyRecord = refreshedRepository.findByName("crm/company", createCompany ? values.company_new : company);
-    if (companyRecord) {
-      await this.addLinkToRecordSection(companyRecord.path, "Opportunities", wikilink(opportunityFile.basename));
+    const opportunity = await this.createAndMaybeOpen(path, content, openFile);
+    // R7 backlink symmetry: the company and the contact list the opportunity.
+    for (const target of [company, contact]) {
+      if (target) {
+        await addLinkToSection(this.vault, target.file, "Opportunities", linkTo(opportunity));
+      }
     }
-    const contactRecord = refreshedRepository.findByName("crm/person", createContact ? values.contact_new : contact);
-    if (contactRecord) {
-      await this.addLinkToRecordSection(contactRecord.path, "Opportunities", wikilink(opportunityFile.basename));
+  }
+
+  // Applies an edit to an existing opportunity and keeps every reference in
+  // sync: frontmatter, file name, body sections and backlinks on both sides.
+  async updateOpportunity(file: TFile, values: EntityFormResult): Promise<TFile> {
+    const before = this.metadataCache.getFileCache(file)?.frontmatter ?? {};
+    const previousCompany = this.findLinked(String(before.company ?? ""), file);
+    const previousContact = this.findLinked(String(before.contact ?? ""), file);
+
+    const company = await this.resolveCompany(values, "company");
+    const contact = await this.resolvePerson(values, "contact", company);
+    const companyValue = company?.link ?? relatedValue(values, "company");
+    const contactValue = contact?.link ?? relatedValue(values, "contact");
+    const name = values.name?.trim() || String(before.name ?? file.basename);
+
+    for (const [previous, current] of [[previousCompany, company], [previousContact, contact]] as const) {
+      if (previous && previous.file.path !== current?.file.path) {
+        await removeLinkFromSection(this.vault, previous.file, "Opportunities", linkTo(file));
+      }
     }
+
+    await this.fileManager.processFrontMatter(file, (fm) => {
+      fm.name = name;
+      fm.company = companyValue;
+      fm.contact = contactValue;
+      fm.value = values.value?.trim() || "";
+      fm.stage = (values.stage?.trim() || "lead").toLowerCase();
+      fm.notes = values.notes?.trim() || "";
+    });
+
+    const renamed = await this.renameOpportunity(file, company?.file.basename ?? relatedValue(values, "company"), name);
+    await setSectionBodyInFile(this.vault, renamed, "Company", companyValue);
+    await setSectionBodyInFile(this.vault, renamed, "Contact", contactValue);
+    for (const target of [company, contact]) {
+      if (target) {
+        await addLinkToSection(this.vault, target.file, "Opportunities", linkTo(renamed));
+      }
+    }
+    return renamed;
+  }
+
+  // Returns the company chosen in the form, creating it when the user typed a
+  // new name. Null when nothing was chosen or the name does not resolve.
+  async resolveCompany(values: EntityFormResult, key: string): Promise<EntityRef | null> {
+    const newName = values[`${key}_new`]?.trim();
+    if (newName) {
+      return refTo(await this.createCompanyRecord({ name: newName }, false));
+    }
+    return this.findExisting("crm/company", values[key]);
+  }
+
+  // Same as resolveCompany for people. A person created here, or an existing
+  // person without a company, is attached to `company` on both sides.
+  async resolvePerson(values: EntityFormResult, key: string, company: EntityRef | null): Promise<EntityRef | null> {
+    const newName = values[`${key}_new`]?.trim();
+    const person = newName
+      ? refTo(await this.createPersonRecord({ name: newName, company: company?.link ?? "" }, false))
+      : this.findExisting("crm/person", values[key]);
+    if (!person || !company) {
+      return person;
+    }
+
+    let belongsToCompany = Boolean(newName);
+    if (!newName) {
+      await this.fileManager.processFrontMatter(person.file, (fm) => {
+        const current = String(fm.company ?? "").trim();
+        if (!current) {
+          fm.company = company.link;
+        }
+        belongsToCompany = !current || current === company.link;
+      });
+    }
+    if (belongsToCompany) {
+      await addLinkToSection(this.vault, company.file, "People", person.link);
+    }
+    return person;
+  }
+
+  private findExisting(type: CrmRecordType, name: string | undefined): EntityRef | null {
+    const record = this.repository().findByName(type, name);
+    const file = record ? this.vault.getAbstractFileByPath(record.path) : null;
+    return file instanceof TFile ? refTo(file) : null;
+  }
+
+  private findLinked(link: string, source: TFile): EntityRef | null {
+    const target = link.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
+    const file = target ? this.metadataCache.getFirstLinkpathDest(target, source.path) : null;
+    return file ? refTo(file) : null;
+  }
+
+  // Renames the opportunity file (Company - Name) through fileManager, so
+  // Obsidian updates links to it, and keeps the H1 title in step.
+  private async renameOpportunity(file: TFile, companyLabel: string, name: string): Promise<TFile> {
+    const desiredBase = `${safeFileName(companyLabel || "No company")} - ${safeFileName(name)}`;
+    if (file.basename !== desiredBase) {
+      const dir = file.parent?.path ?? `${normalizeFolderPath(this.settings.crmRoot)}/Opportunities`;
+      let target = `${dir}/${desiredBase}.md`;
+      let counter = 2;
+      while (this.vault.getAbstractFileByPath(target) && target !== file.path) {
+        target = `${dir}/${desiredBase} ${counter}.md`;
+        counter += 1;
+      }
+      await this.fileManager.renameFile(file, target);
+    }
+
+    const content = await this.vault.read(file);
+    const updated = content.replace(/^#\s+.*$/m, `# ${file.basename}`);
+    if (updated !== content) {
+      await this.vault.modify(file, updated);
+    }
+    return file;
   }
 
   private async createPersonRecord(values: EntityFormResult, openFile: boolean): Promise<TFile> {
@@ -157,15 +256,21 @@ export class EntityCreator {
     }
     return file;
   }
-
-  private async addLinkToRecordSection(path: string, heading: string, link: string): Promise<void> {
-    const file = this.vault.getAbstractFileByPath(path);
-    if (file instanceof TFile) {
-      await addLinkToSection(this.vault, file, heading, link);
-    }
-  }
 }
 
 function relatedValue(values: EntityFormResult, key: string): string {
   return values[`${key}_new`]?.trim() || values[key]?.trim() || "";
+}
+
+function refTo(file: TFile): EntityRef {
+  return { link: linkTo(file), file };
+}
+
+function linkTo(file: TFile): string {
+  return `[[${file.basename}]]`;
+}
+
+function opportunityBody(title: string, company: string, contact: string): string {
+  const section = (heading: string, text: string) => (text ? `## ${heading}\n\n${text}\n\n` : `## ${heading}\n\n`);
+  return `# ${title}\n\n${section("Company", company)}${section("Contact", contact)}## Situation\n\n## Pain points\n\n## Value proposition\n\n## Next steps\n\n## History\n`;
 }

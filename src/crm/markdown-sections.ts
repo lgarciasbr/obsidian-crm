@@ -1,37 +1,90 @@
-import { TFile, Vault } from "obsidian";
+import type { TFile, Vault } from "obsidian";
+
+// Pure helpers for `## Heading` sections in CRM note bodies. They always leave
+// the canonical layout: heading, blank line, content, blank line, next heading.
 
 export async function addLinkToSection(vault: Vault, file: TFile, heading: string, link: string): Promise<void> {
-  const content = await vault.read(file);
-  const updated = addListItemToSection(content, heading, link);
-  if (updated !== content) {
-    await vault.modify(file, updated);
-  }
+  await updateFile(vault, file, (content) => addListItemToSection(content, heading, link));
+}
+
+export async function removeLinkFromSection(vault: Vault, file: TFile, heading: string, link: string): Promise<void> {
+  await updateFile(vault, file, (content) => removeListItemFromSection(content, heading, link));
+}
+
+export async function setSectionBodyInFile(vault: Vault, file: TFile, heading: string, body: string): Promise<void> {
+  await updateFile(vault, file, (content) => setSectionBody(content, heading, body));
 }
 
 export function addListItemToSection(content: string, heading: string, link: string): string {
   const item = `- ${link}`;
-  if (content.includes(item)) {
+  return editSection(content, heading, (body) => {
+    if (body.some((line) => line.trim() === item)) {
+      return body;
+    }
+    const last = body[body.length - 1];
+    if (last === undefined) {
+      return [item];
+    }
+    return last.trim().startsWith("- ") ? [...body, item] : [...body, "", item];
+  });
+}
+
+export function removeListItemFromSection(content: string, heading: string, link: string): string {
+  const item = `- ${link}`;
+  return editSection(content, heading, (body) => body.filter((line) => line.trim() !== item), false);
+}
+
+export function setSectionBody(content: string, heading: string, text: string): string {
+  return editSection(content, heading, () => (text.trim() ? text.trim().split("\n") : []));
+}
+
+function editSection(
+  content: string,
+  heading: string,
+  edit: (body: string[]) => string[],
+  createIfMissing = true
+): string {
+  const headingLine = `## ${heading}`;
+  const lines = content.replace(/\s+$/, "").split("\n");
+  const start = lines.findIndex((line) => line.trim() === headingLine);
+
+  if (start === -1) {
+    const body = edit([]);
+    if (!createIfMissing || !body.length) {
+      return content;
+    }
+    return `${lines.join("\n")}\n\n${headingLine}\n\n${body.join("\n")}\n`;
+  }
+
+  let end = lines.findIndex((line, index) => index > start && /^##\s+/.test(line));
+  if (end === -1) {
+    end = lines.length;
+  }
+
+  const current = trimBlankLines(lines.slice(start + 1, end));
+  const next = trimBlankLines(edit(current));
+  if (next.length === current.length && next.every((line, index) => line === current[index])) {
     return content;
   }
 
-  const headingLine = `## ${heading}`;
-  const lines = content.split("\n");
-  const headingIndex = lines.findIndex((line) => line.trim() === headingLine);
+  const section = next.length ? [headingLine, "", ...next] : [headingLine];
+  const rest = lines.slice(end);
+  const rebuilt = [...lines.slice(0, start), ...section, ...(rest.length ? ["", ...rest] : [])];
+  return `${rebuilt.join("\n")}\n`;
+}
 
-  if (headingIndex === -1) {
-    return `${content.trimEnd()}\n\n${headingLine}\n\n${item}\n`;
+function trimBlankLines(lines: string[]): string[] {
+  let first = 0;
+  let last = lines.length;
+  while (first < last && !lines[first].trim()) first += 1;
+  while (last > first && !lines[last - 1].trim()) last -= 1;
+  return lines.slice(first, last);
+}
+
+async function updateFile(vault: Vault, file: TFile, change: (content: string) => string): Promise<void> {
+  const content = await vault.read(file);
+  const updated = change(content);
+  if (updated !== content) {
+    await vault.modify(file, updated);
   }
-
-  let insertIndex = lines.length;
-  for (let index = headingIndex + 1; index < lines.length; index += 1) {
-    if (/^##\s+/.test(lines[index])) {
-      insertIndex = index;
-      break;
-    }
-  }
-
-  const beforeInsert = lines[insertIndex - 1] ?? "";
-  const insertion = beforeInsert.trim() ? ["", item] : [item];
-  lines.splice(insertIndex, 0, ...insertion);
-  return lines.join("\n");
 }

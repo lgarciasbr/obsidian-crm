@@ -8,7 +8,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    "strictPropertyInitialization": false
   },
-  "include": ["src/crm/integrity.ts", "src/crm/validator.ts", "tests/**/*.ts"]
+  "include": [
+    "src/crm/integrity.ts",
+    "src/crm/validator.ts",
+    "src/crm/markdown-sections.ts",
+    "src/crm/frontmatter.ts",
+    "tests/**/*.ts"
+  ]
 }

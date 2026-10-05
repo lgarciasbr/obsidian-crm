@@ -4,7 +4,8 @@ import { today } from "./dates";
 import { crmId, safeFileName } from "./file-names";
 import { frontmatter } from "./frontmatter";
 import { ensureCrmFolders } from "./folders";
-import { CrmRecord, CrmRepository } from "./repository";
+import { CrmRepository } from "./repository";
+import { EntityCreator, EntityRef } from "./entity-creation";
 import { addLinkToSection } from "./markdown-sections";
 import { resolveLastContact, resolveNextAction } from "./integrity";
 import { EntityFormResult } from "./types";
@@ -15,21 +16,24 @@ export class InteractionCreator {
     private workspace: Workspace,
     private metadataCache: MetadataCache,
     private fileManager: FileManager,
-    private settings: CrmSettings
+    private settings: CrmSettings,
+    private entities: EntityCreator
   ) {}
 
   async createInteraction(values: EntityFormResult): Promise<void> {
     await ensureCrmFolders(this.vault, this.settings.crmRoot);
 
+    // People and companies typed as new in the form are created first, so the
+    // interaction links to the real notes (with their final file names).
+    const company = await this.entities.resolveCompany(values, "company");
+    const person = await this.entities.resolvePerson(values, "person", company);
+    const opportunity = this.findOpportunity(values.opportunity);
+
     const date = values.date?.trim() || today();
     const kind = values.kind?.trim() || "note";
-    const person = values.person?.trim() || "";
-    const company = values.company?.trim() || "";
-    const opportunity = values.opportunity?.trim() || "";
-    const titleTarget = person || company || "Interaction";
+    const titleTarget = person?.file.basename || company?.file.basename || "Interaction";
     const title = `${date} - ${kind} - ${titleTarget}`;
     const path = await this.nextAvailablePath(`Interactions/${safeFileName(title)}.md`);
-    const repository = new CrmRepository(this.vault, this.metadataCache, this.settings);
     const task = followUpTask(values.next_action, values.next_action_date, this.settings.taskTag);
 
     const content = frontmatter({
@@ -37,24 +41,27 @@ export class InteractionCreator {
       crm_id: crmId("interaction", title),
       date,
       kind,
-      people: person ? [repository.resolveLinkOrText("crm/person", person)] : [],
-      company: repository.resolveLinkOrText("crm/company", company),
-      opportunity: repository.resolveLinkOrText("crm/opportunity", opportunity),
+      people: person ? [person.link] : [],
+      company: company?.link ?? "",
+      opportunity: opportunity?.link ?? "",
       next_action: values.next_action,
       next_action_date: values.next_action_date,
       tags: ["crm/interaction"],
     }, `# ${title}\n\n## Summary\n\n${values.summary || ""}\n\n## Key points\n\n## Commitments\n\n## Next action\n\n${task || values.next_action || ""}\n`);
 
     const file = await this.vault.create(path, content) as TFile;
-    const failedUpdates = await this.updateRelatedRecords(repository, {
-      person,
-      company,
-      opportunity,
-      date,
-      nextAction: values.next_action,
-      nextActionDate: values.next_action_date,
-      interactionLink: `[[${file.basename}]]`,
-    });
+    const failedUpdates: string[] = [];
+    for (const related of [person, company, opportunity]) {
+      if (!related) {
+        continue;
+      }
+      try {
+        await this.updateRecordFrontmatter(related.file, date, values.next_action || "", values.next_action_date || "");
+        await addLinkToSection(this.vault, related.file, "History", `[[${file.basename}]]`);
+      } catch (_error) {
+        failedUpdates.push(related.file.basename);
+      }
+    }
 
     new Notice(`Created ${path}`);
     if (failedUpdates.length) {
@@ -63,55 +70,18 @@ export class InteractionCreator {
     await this.workspace.getLeaf("tab").openFile(file);
   }
 
-  private async updateRelatedRecords(
-    repository: CrmRepository,
-    values: {
-      person: string;
-      company: string;
-      opportunity: string;
-      date: string;
-      nextAction?: string;
-      nextActionDate?: string;
-      interactionLink: string;
-    }
-  ): Promise<string[]> {
-    const failed: string[] = [];
-    const records = [
-      repository.findByName("crm/person", values.person),
-      repository.findByName("crm/company", values.company),
-      repository.findByName("crm/opportunity", values.opportunity),
-    ].filter((record): record is CrmRecord => record !== null);
-
-    for (const record of records) {
-      try {
-        await this.updateRecordFrontmatter(record, values.date, values.nextAction || "", values.nextActionDate || "");
-        await this.addHistoryLink(record, values.interactionLink);
-      } catch (_error) {
-        failed.push(record.name);
-      }
-    }
-
-    return failed;
-  }
-
-  private async addHistoryLink(record: CrmRecord, interactionLink: string): Promise<void> {
-    const file = this.vault.getAbstractFileByPath(record.path);
-    if (file instanceof TFile) {
-      await addLinkToSection(this.vault, file, "History", interactionLink);
-    }
+  private findOpportunity(name: string | undefined): EntityRef | null {
+    const record = new CrmRepository(this.vault, this.metadataCache, this.settings).findByName("crm/opportunity", name);
+    const file = record ? this.vault.getAbstractFileByPath(record.path) : null;
+    return file instanceof TFile ? { link: `[[${file.basename}]]`, file } : null;
   }
 
   private async updateRecordFrontmatter(
-    record: CrmRecord,
+    file: TFile,
     lastContact: string,
     nextAction: string,
     nextActionDate: string
   ): Promise<void> {
-    const file = this.vault.getAbstractFileByPath(record.path);
-    if (!(file instanceof TFile)) {
-      throw new Error(`Record file not found: ${record.path}`);
-    }
-
     // Contract R1/R2: never roll back last_contact, never wipe a pending
     // next_action with an empty incoming action. See docs/project/data-contract.md.
     await this.fileManager.processFrontMatter(file, (frontmatter) => {
