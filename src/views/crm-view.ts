@@ -228,7 +228,7 @@ export class CrmView extends TextFileView {
     search.value = this.contactsSearch;
     this.renderToolbarButton(
       localActions,
-      kind === "person" ? "user-plus" : "building-2",
+      kind === "person" ? "user" : "building-2",
       kind === "person" ? "New contact" : "New company",
       kind === "person" ? this.onAddPerson : this.onAddCompany
     );
