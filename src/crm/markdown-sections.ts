@@ -7,6 +7,10 @@ export async function addLinkToSection(vault: Vault, file: TFile, heading: strin
   await updateFile(vault, file, (content) => addListItemToSection(content, heading, link));
 }
 
+export async function addLineToSectionInFile(vault: Vault, file: TFile, heading: string, line: string): Promise<void> {
+  await updateFile(vault, file, (content) => addLineToSection(content, heading, line));
+}
+
 export async function removeLinkFromSection(vault: Vault, file: TFile, heading: string, link: string): Promise<void> {
   await updateFile(vault, file, (content) => removeListItemFromSection(content, heading, link));
 }
@@ -16,7 +20,12 @@ export async function setSectionBodyInFile(vault: Vault, file: TFile, heading: s
 }
 
 export function addListItemToSection(content: string, heading: string, link: string): string {
-  const item = `- ${link}`;
+  return addLineToSection(content, heading, `- ${link}`);
+}
+
+// Appends `item` (a full line such as "- [[x]]" or "- [ ] task") to the
+// section, joining an existing list; a no-op if the line is already there.
+export function addLineToSection(content: string, heading: string, item: string): string {
   return editSection(content, heading, (body) => {
     if (body.some((line) => line.trim() === item)) {
       return body;

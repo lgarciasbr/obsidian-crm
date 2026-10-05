@@ -1,6 +1,7 @@
 import { MarkdownView, Notice, Plugin, TFile, WorkspaceLeaf } from "obsidian";
 import { EntityCreator } from "./src/crm/entity-creation";
-import { INTERACTION_KINDS } from "./src/crm/integrity";
+import { DEFAULT_STAGES, INTERACTION_KINDS } from "./src/crm/integrity";
+import { NEXT_ACTION_TYPES, setNextAction } from "./src/crm/next-action";
 import { ensureCrmFolders } from "./src/crm/folders";
 import { InteractionCreator } from "./src/crm/interactions";
 import { CrmRepository } from "./src/crm/repository";
@@ -9,7 +10,6 @@ import { EntityModal } from "./src/ui/entity-modal";
 import { EntityField } from "./src/crm/types";
 import { safeFileName } from "./src/crm/file-names";
 import {
-  DEFAULT_PIPELINE_STAGES,
   ensurePipelineFile,
   CRM_VIEW_TYPE,
   CrmView,
@@ -25,8 +25,6 @@ export default class CrmPlugin extends Plugin {
   settings: CrmSettings;
 
   async onload(): Promise<void> {
-    console.log("Loading CRM");
-
     await this.loadSettings();
     this.addSettingTab(new CrmSettingTab(this.app, this));
 
@@ -57,17 +55,19 @@ export default class CrmPlugin extends Plugin {
       })
     );
 
+    // Obsidian shows commands as "CRM: <name>" (id "crm:<id>"), so names and
+    // ids do not repeat the plugin name.
     this.addCommand({
-      id: "open-crm",
-      name: "Open CRM",
+      id: "open",
+      name: "Open",
       callback: () => this.openOrCreateCrm(),
     });
 
     this.addRibbonIcon("filter", "Open CRM", () => this.openOrCreateCrm());
 
     this.addCommand({
-      id: "initialize-crm-folders",
-      name: "Initialize CRM folders",
+      id: "initialize-folders",
+      name: "Initialize folders",
       callback: async () => {
         await ensureCrmFolders(this.app.vault, this.settings.crmRoot);
         const pipelineFile = await ensurePipelineFile(this.app.vault, this.settings);
@@ -105,12 +105,18 @@ export default class CrmPlugin extends Plugin {
     this.addCommand({
       id: "set-next-action",
       name: "Set next action",
-      callback: () => this.openSetNextActionModal(),
+      checkCallback: (checking) => {
+        const file = this.activeEntityNote();
+        if (file && !checking) {
+          this.openSetNextActionModal(file);
+        }
+        return Boolean(file);
+      },
     });
 
     this.addCommand({
-      id: "validate-crm",
-      name: "Validate CRM data",
+      id: "validate",
+      name: "Validate data",
       callback: () => this.runValidation(),
     });
   }
@@ -145,10 +151,6 @@ export default class CrmPlugin extends Plugin {
     await this.app.workspace.getLeaf("tab").openFile(file);
   }
 
-  onunload(): void {
-    console.log("Unloading CRM");
-  }
-
   async loadSettings(): Promise<void> {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
@@ -169,50 +171,22 @@ export default class CrmPlugin extends Plugin {
     return new InteractionCreator(this.app.vault, this.app.workspace, this.app.metadataCache, this.app.fileManager, this.settings, this.entityCreator());
   }
 
-  private openSetNextActionModal(): void {
+  // The active note when it is a CRM person, company or opportunity.
+  private activeEntityNote(): TFile | null {
     const file = this.app.workspace.getActiveFile();
-    if (!file) {
-      new Notice("Open a CRM note to set its next action.");
-      return;
-    }
+    const type = file ? this.app.metadataCache.getFileCache(file)?.frontmatter?.type : null;
+    return file && NEXT_ACTION_TYPES.includes(String(type)) ? file : null;
+  }
 
+  private openSetNextActionModal(file: TFile): void {
     const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
-    const type = frontmatter?.type;
-    if (!["crm/person", "crm/company", "crm/opportunity"].includes(String(type))) {
-      new Notice("This note is not a CRM person, company, or opportunity.");
-      return;
-    }
-
     new EntityModal(this.app, "Set next action", [
       { key: "next_action", label: "Next action", defaultValue: String(frontmatter?.next_action || ""), required: true },
       { key: "next_action_date", label: "Next action date", inputType: "date", defaultValue: String(frontmatter?.next_action_date || "") },
-    ], async (values) => this.setNextAction(file, values.next_action, values.next_action_date), "Save next action").open();
-  }
-
-  private async setNextAction(file: TFile, nextAction: string | undefined, nextActionDate: string | undefined): Promise<void> {
-    const action = nextAction?.trim() || "";
-    const date = nextActionDate?.trim() || "";
-
-    await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-      frontmatter.next_action = action;
-      frontmatter.next_action_date = date;
-    });
-
-    if (this.settings.createTasksByDefault && action) {
-      const task = this.followUpTask(action, date);
-      const content = await this.app.vault.read(file);
-      if (!content.includes(task)) {
-        await this.app.vault.modify(file, `${content.trimEnd()}\n\n## Next action\n\n${task}\n`);
-      }
-    }
-
-    new Notice("Next action updated.");
-  }
-
-  private followUpTask(action: string, date: string): string {
-    const due = date ? ` 📅 ${date}` : "";
-    const tag = this.settings.taskTag.trim() ? ` ${this.settings.taskTag.trim()}` : "";
-    return `- [ ] ${action}${due}${tag}`;
+    ], async (values) => {
+      await setNextAction(this.app.vault, this.app.fileManager, file, values.next_action, values.next_action_date, this.settings);
+      new Notice("Next action updated.");
+    }, "Save next action").open();
   }
 
   private openCreatePersonModal(openAfterCreate = true): void {
@@ -302,7 +276,7 @@ export default class CrmPlugin extends Plugin {
 
     await this.app.fileManager.processFrontMatter(abstractFile, (frontmatter) => {
       if (!Array.isArray(frontmatter.stages) || !frontmatter.stages.length) {
-        frontmatter.stages = DEFAULT_PIPELINE_STAGES;
+        frontmatter.stages = [...DEFAULT_STAGES];
       }
     });
   }
@@ -318,7 +292,7 @@ export default class CrmPlugin extends Plugin {
       }
     }
 
-    return DEFAULT_PIPELINE_STAGES;
+    return [...DEFAULT_STAGES];
   }
 
   private async openOrCreateCrm(): Promise<void> {

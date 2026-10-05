@@ -3,8 +3,6 @@ import CrmPlugin from "../main";
 
 export interface CrmSettings {
   crmRoot: string;
-  defaultFollowupDays: number;
-  coolingThresholdDays: number;
   createTasksByDefault: boolean;
   taskTag: string;
   defaultCurrency: string;
@@ -13,8 +11,6 @@ export interface CrmSettings {
 
 export const DEFAULT_SETTINGS: CrmSettings = {
   crmRoot: "CRM",
-  defaultFollowupDays: 7,
-  coolingThresholdDays: 60,
   createTasksByDefault: true,
   taskTag: "#crm/follow-up",
   defaultCurrency: "BRL",
@@ -53,17 +49,40 @@ export class CrmSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "CRM" });
-
     new Setting(containerEl)
-      .setName("CRM root folder")
-      .setDesc("Folder where CRM records will be stored.")
+      .setName("Root folder")
+      .setDesc("Folder where CRM records are stored.")
       .addText((text) =>
         text
           .setPlaceholder(DEFAULT_SETTINGS.crmRoot)
           .setValue(this.plugin.settings.crmRoot)
           .onChange(async (value) => {
             this.plugin.settings.crmRoot = normalizeFolderPath(value || DEFAULT_SETTINGS.crmRoot);
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Create follow-up tasks")
+      .setDesc("Add a Markdown task when an interaction or Set next action has a next action.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.createTasksByDefault)
+          .onChange(async (value) => {
+            this.plugin.settings.createTasksByDefault = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Follow-up task tag")
+      .setDesc("Tag added to follow-up tasks. Leave empty for no tag.")
+      .addText((text) =>
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.taskTag)
+          .setValue(this.plugin.settings.taskTag)
+          .onChange(async (value) => {
+            this.plugin.settings.taskTag = value.trim();
             await this.plugin.saveSettings();
           })
       );

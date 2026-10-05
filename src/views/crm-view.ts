@@ -2,10 +2,9 @@ import { App, FileManager, Menu, Modal, Notice, debounce, setIcon, Setting, TFil
 import { CrmSettings, normalizeFolderPath, resolveLocale } from "../settings";
 import { ensureCrmFolders } from "../crm/folders";
 import { CrmRecord, CrmRepository } from "../crm/repository";
+import { DEFAULT_STAGES } from "../crm/integrity";
 
 export const CRM_VIEW_TYPE = "crm-view";
-
-export const DEFAULT_PIPELINE_STAGES = ["lead", "conversation", "proposal", "negotiation", "won", "lost", "paused"];
 
 export async function ensurePipelineFile(vault: Vault, settings: CrmSettings): Promise<TFile | null> {
   await ensureCrmFolders(vault, settings.crmRoot);
@@ -526,7 +525,7 @@ export class CrmView extends TextFileView {
       return stages.map((stage) => stage.trim()).filter(Boolean);
     }
 
-    return DEFAULT_PIPELINE_STAGES;
+    return [...DEFAULT_STAGES];
   }
 
   private onCardDragStart(event: DragEvent, record: CrmRecord): void {

@@ -59,12 +59,14 @@ Then enable the plugin in Obsidian.
 
 ## Commands
 
-- `Open CRM` — open the CRM view (Pipeline, Companies, Contacts)
-- `Initialize CRM folders`
+Obsidian lists them as `CRM: <command>`:
+
+- `Open` — open the CRM view (Pipeline, Companies, Contacts); also on the ribbon
+- `Initialize folders`
 - `Create person`, `Create company`, `Create opportunity`
 - `Log interaction`
-- `Set next action` — on the active person, company or opportunity note
-- `Validate CRM data`
+- `Set next action` — only available on a person, company or opportunity note
+- `Validate data` — writes `Validation Report.md` in the CRM folder
 
 ## Tests
 

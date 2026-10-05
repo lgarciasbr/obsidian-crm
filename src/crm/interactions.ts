@@ -6,6 +6,7 @@ import { frontmatter } from "./frontmatter";
 import { ensureCrmFolders } from "./folders";
 import { CrmRepository } from "./repository";
 import { EntityCreator, EntityRef } from "./entity-creation";
+import { followUpTask } from "./next-action";
 import { addLinkToSection } from "./markdown-sections";
 import { resolveLastContact, resolveNextAction } from "./integrity";
 import { EntityFormResult } from "./types";
@@ -34,7 +35,7 @@ export class InteractionCreator {
     const titleTarget = person?.file.basename || company?.file.basename || "Interaction";
     const title = `${date} - ${kind} - ${titleTarget}`;
     const path = await this.nextAvailablePath(`Interactions/${safeFileName(title)}.md`);
-    const task = followUpTask(values.next_action, values.next_action_date, this.settings.taskTag);
+    const task = this.settings.createTasksByDefault ? followUpTask(values.next_action, values.next_action_date, this.settings.taskTag) : "";
 
     const content = frontmatter({
       type: "crm/interaction",
@@ -116,15 +117,4 @@ export class InteractionCreator {
 
     return candidate;
   }
-}
-
-function followUpTask(nextAction: string | undefined, nextActionDate: string | undefined, taskTag: string): string {
-  const action = nextAction?.trim();
-  if (!action) {
-    return "";
-  }
-
-  const due = nextActionDate?.trim() ? ` 📅 ${nextActionDate.trim()}` : "";
-  const tag = taskTag.trim() ? ` ${taskTag.trim()}` : "";
-  return `- [ ] ${action}${due}${tag}`;
 }

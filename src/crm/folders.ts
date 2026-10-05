@@ -1,5 +1,6 @@
 import { TFile, Vault } from "obsidian";
 import { CRM_SUBFOLDERS } from "../constants";
+import { DEFAULT_STAGES } from "./integrity";
 import { normalizeFolderPath } from "../settings";
 
 export async function ensureCrmFolders(vault: Vault, crmRoot: string): Promise<void> {
@@ -28,7 +29,8 @@ async function ensurePipelineFile(vault: Vault, root: string): Promise<TFile | n
     return existing;
   }
 
-  const content = "---\ntype: crm/pipeline\nstages:\n  - lead\n  - conversation\n  - proposal\n  - negotiation\n  - won\n  - lost\n  - paused\n---\n\n# Pipeline\n\nThis file anchors the CRM pipeline board.\n";
+  const stages = DEFAULT_STAGES.map((stage) => `  - ${stage}`).join("\n");
+  const content = `---\ntype: crm/pipeline\nstages:\n${stages}\n---\n\n# Pipeline\n\nThis file anchors the CRM pipeline board.\n`;
   const created = await vault.create(path, content);
   return created instanceof TFile ? created : null;
 }
