@@ -2,7 +2,7 @@
 
 # TS-002 — Add Settings and CRM Folder Foundation
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

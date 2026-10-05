@@ -2,7 +2,7 @@
 
 # TS-008 — Update Related Entity Follow-up Metadata
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

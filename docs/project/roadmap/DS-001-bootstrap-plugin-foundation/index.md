@@ -30,8 +30,8 @@ A minimal Obsidian plugin project exists in this repository, based on the offici
 | Code | Story | Type | Outcome | Status |
 |------|-------|------|---------|--------|
 | TS-001 | Create loadable plugin scaffold | Technical Story | Project structure, manifest, package config, and build pipeline exist. | 🟩 Done |
-| TS-002 | Register minimal dashboard command | Technical Story | Obsidian command palette exposes an “Open CRM dashboard” command with no CRM behavior yet. | 🟩 Absorbed into TS-001 |
-| TS-003 | Document MVP constraints in repo | Technical Story | README documents local-first, no network, no telemetry, no AI, and MVP source of truth. | 🟩 Absorbed into TS-001 |
+| — | Register minimal dashboard command | Technical Story | Obsidian command palette exposes an “Open CRM dashboard” command with no CRM behavior yet. | 🟩 Absorbed into TS-001 |
+| — | Document MVP constraints in repo | Technical Story | README documents local-first, no network, no telemetry, no AI, and MVP source of truth. | 🟩 Absorbed into TS-001 |
 
 ## Done Condition
 

@@ -2,7 +2,7 @@
 
 # TS-009 — Generate Markdown Follow-up Tasks
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

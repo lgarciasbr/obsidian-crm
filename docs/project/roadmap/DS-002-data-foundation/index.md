@@ -2,7 +2,7 @@
 
 # DS-002 — Data Foundation for CRM Entities
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 
 ---
 
@@ -31,10 +31,11 @@ The plugin can create and read the three base CRM entity types — people, compa
 
 | Code | Story | Type | Outcome | Status |
 |------|-------|------|---------|--------|
-| TS-002 | Add settings and CRM folder foundation | Technical Story | Plugin has minimal settings and can ensure the configured CRM folder structure exists. | 🟡 Planned |
-| TS-003 | Create person/company/opportunity records | Technical Story | Commands create Markdown files with MVP frontmatter for base entities. | ⚪ Backlog |
-| TS-004 | Modularize data foundation code | Technical Story | Existing entity creation behavior is preserved while mixed responsibilities are split out of `main.ts`. | 🟡 Planned |
-| TS-005 | Read CRM records from metadata cache | Technical Story | Repository can list CRM entities from Markdown/frontmatter using Obsidian metadata where possible. | ⚪ Backlog |
+| TS-002 | Add settings and CRM folder foundation | Technical Story | Plugin has minimal settings and can ensure the configured CRM folder structure exists. | 🟩 Done |
+| TS-003 | Create person/company/opportunity records | Technical Story | Commands create Markdown files with MVP frontmatter for base entities. | 🟩 Done |
+| TS-004 | Modularize data foundation code | Technical Story | Existing entity creation behavior is preserved while mixed responsibilities are split out of `main.ts`. | 🟩 Done |
+| TS-005 | Read CRM records from metadata cache | Technical Story | Repository can list CRM entities from Markdown/frontmatter using Obsidian metadata where possible. | 🟩 Done |
+| TS-006 | Select or create related entities | Technical Story | Person/opportunity creation can select existing related entities or explicitly create missing ones. | 🟩 Done |
 
 ## Done Condition
 

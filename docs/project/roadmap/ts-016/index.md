@@ -2,7 +2,7 @@
 
 # TS-016 — Markdown Body Relationship Sync
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

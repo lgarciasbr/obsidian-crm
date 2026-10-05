@@ -4,7 +4,7 @@ A local-first CRM for solo professionals to manage relationships, opportunities,
 
 ## MVP status
 
-This repository is currently in the TS-001 bootstrap stage. The plugin scaffold can load in Obsidian, but real CRM behavior is not implemented yet.
+The v0.1 MVP loop is implemented: create people, companies and opportunities, log interactions, update follow-up metadata, generate Markdown tasks, and manage opportunities on a Kanban-style pipeline. Community-ready hardening (DS-005) has not started. See [the roadmap](docs/project/roadmap/index.md).
 
 The MVP source of truth is `MVP.md`, a private product contract kept outside this repository.
 
@@ -57,12 +57,17 @@ Copy those files into a test vault:
 
 Then enable the plugin in Obsidian.
 
-## Current behavior
+## Commands
 
-The plugin registers a placeholder command:
+- `Open Relationship CRM` — open the CRM view (pipeline, contacts, companies)
+- `Initialize CRM folders`
+- `Create person`, `Create company`, `Create opportunity`
+- `Log interaction`
+- `Set next action` — on the active person, company or opportunity note
+- `Validate CRM data`
 
-```text
-Open CRM dashboard
+## Tests
+
+```bash
+npm test
 ```
-
-The command only shows a notice. Real dashboard behavior belongs to a later story.

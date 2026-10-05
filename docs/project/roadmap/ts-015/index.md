@@ -2,7 +2,7 @@
 
 # TS-015 — Pipeline Creation Flow and Formatting Defaults
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

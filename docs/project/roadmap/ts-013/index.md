@@ -2,7 +2,7 @@
 
 # TS-013 — Kanban-style Pipeline Editing
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

@@ -2,7 +2,7 @@
 
 # TS-011 — Build simple Opportunity Pipeline
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

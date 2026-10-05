@@ -2,7 +2,7 @@
 
 # TS-005 — Read CRM Records and Resolve Entity Links
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

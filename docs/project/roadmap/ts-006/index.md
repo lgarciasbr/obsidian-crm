@@ -2,7 +2,7 @@
 
 # TS-006 — Select or Create Related Entities
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

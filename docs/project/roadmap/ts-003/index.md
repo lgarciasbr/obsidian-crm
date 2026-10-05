@@ -2,7 +2,7 @@
 
 # TS-003 — Create Person/Company/Opportunity Records
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

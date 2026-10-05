@@ -2,7 +2,7 @@
 
 # TS-001 — Create Loadable Plugin Scaffold
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

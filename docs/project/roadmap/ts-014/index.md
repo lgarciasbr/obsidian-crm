@@ -2,7 +2,7 @@
 
 # TS-014 — Remove Dashboard and Implement Set Next Action
 
-**Status:** 🟡 Planned
+**Status:** 🟠 Implemented — awaiting Navigator validation
 **Type:** Technical Story
 
 ---

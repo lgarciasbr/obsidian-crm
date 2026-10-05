@@ -2,7 +2,7 @@
 
 # TS-007 — Create Interaction Notes
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

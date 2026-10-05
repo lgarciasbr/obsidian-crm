@@ -28,6 +28,7 @@ The plugin supports the core MVP loop: log a commercial interaction, preserve it
 | TS-007 | Create interaction notes | Technical Story | User can create interaction notes under `CRM/Interactions` linked to existing CRM entities. | 🟩 Done |
 | TS-008 | Update related entity follow-up metadata | Technical Story | Logging an interaction updates `last_contact`, `next_action`, and `next_action_date` on related records when possible. | 🟩 Done |
 | TS-009 | Generate Markdown follow-up tasks | Technical Story | Logging an interaction can add a Tasks-compatible Markdown follow-up task. | 🟩 Done |
+| TS-016 | Markdown body relationship sync | Technical Story | Note bodies get wikilinks under `## Pessoas`, `## Oportunidades` and `## Histórico` matching frontmatter relationships, without duplicates. | 🟩 Done |
 
 ## Done Condition
 

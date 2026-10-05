@@ -2,7 +2,7 @@
 
 # TS-010 — Build Attention Dashboard
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---

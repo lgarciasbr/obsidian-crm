@@ -2,7 +2,7 @@
 
 # TS-012 — Polish CRM Creation Modals
 
-**Status:** 🟡 Planned
+**Status:** 🟩 Done
 **Type:** Technical Story
 
 ---
