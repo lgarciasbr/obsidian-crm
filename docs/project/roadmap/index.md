@@ -48,6 +48,7 @@ Rules:
 | TS-018 | English UI and "CRM" display name | — (post-baseline) | 🟩 Done |
 | TS-019 | Clean slate: plugin id `crm`, no compatibility layer | — (post-baseline) | 🟩 Done |
 | TS-020 | Reliable relationship references | — (post-baseline) | 🟩 Done |
+| TS-021 | Commands, settings and test coverage review | — (post-baseline) | 🟩 Done |
 
 ## Baseline — 2026-10-05
 
