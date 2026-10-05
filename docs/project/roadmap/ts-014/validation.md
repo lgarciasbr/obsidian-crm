@@ -2,7 +2,9 @@
 
 ## Status
 
-Blocked
+Closed without manual validation
+
+Closed by Navigator decision on 2026-10-05 as part of the v0.1 baseline. Manual Obsidian validation was not performed; the build in the test vault matches this code.
 
 ## Automated Checks
 

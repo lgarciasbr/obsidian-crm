@@ -21,7 +21,7 @@ Rules:
 | DS-001 | Bootstrap Obsidian plugin foundation | A loadable Obsidian plugin project exists in this repository, with manifest/build/docs aligned to MVP constraints. | 🟩 Done |
 | DS-002 | Data foundation for CRM entities | The plugin can create and read people, companies, and opportunities as Markdown/frontmatter records. | 🟩 Done |
 | DS-003 | Interaction loop and follow-up | The plugin can log interactions, update related records when possible, and create Markdown follow-up tasks. | 🟩 Done |
-| DS-004 | Value surfaces | The plugin exposes the Opportunity Pipeline as the primary visual surface (Attention Dashboard was built, then rejected and removed). | 🟠 In validation (TS-014) |
+| DS-004 | Value surfaces | The plugin exposes the Opportunity Pipeline as the primary visual surface (Attention Dashboard was built, then rejected and removed). | 🟩 Done |
 | DS-005 | Community-ready hardening | The plugin is documented, privacy-safe, manually installable, tested where practical, and ready for release review. | ⚪ Backlog |
 
 ## Story Index
@@ -41,13 +41,18 @@ Rules:
 | TS-011 | Build simple Opportunity Pipeline | DS-004 | 🟩 Done |
 | TS-012 | Polish CRM creation modals | DS-004 | 🟩 Done |
 | TS-013 | Kanban-style pipeline editing | DS-004 | 🟩 Done |
-| TS-014 | Remove dashboard and implement Set next action | DS-004 | 🟠 Implemented — awaiting Navigator validation |
+| TS-014 | Remove dashboard and implement Set next action | DS-004 | 🟩 Done (closed without manual validation) |
 | TS-015 | Pipeline creation flow and formatting defaults | DS-004 | 🟩 Done |
 | TS-016 | Markdown body relationship sync | DS-003 | 🟩 Done |
+| TS-017 | CRM Home with tabs | DS-004 | 🟩 Done (baseline) |
 
-## Untracked Work In Progress
+## Baseline — 2026-10-05
 
-- **CRM Home with tabs** (commit `8519727`): replaces the standalone pipeline view with a single `CrmView` that has Dashboard (placeholder), Empresas, Contatos and Pipeline tabs. No story covers it yet, and its Dashboard tab conflicts with TS-014's dashboard removal — the Navigator must decide whether it becomes a new story or is reverted.
+Everything above was closed by Navigator decision as the v0.1 baseline. New work starts from here as new stories; DS-005 is the next Delivery Story. Known open items carried forward:
+
+- TS-017 Dashboard tab is a placeholder — define what the dashboard should be.
+- TD-001 (deferred debt): next action comes only from opportunity frontmatter.
+- TS-014 and TS-017 were closed without manual Navigator validation.
 
 ## v0.1 Non-goals
 

@@ -2,7 +2,7 @@
 
 # DS-004 — Value Surfaces
 
-**Status:** 🟠 In validation (TS-014)
+**Status:** 🟩 Done
 
 ---
 
@@ -29,12 +29,13 @@ The plugin exposes MVP value surfaces that turn CRM records and follow-up metada
 | TS-011 | Build simple Opportunity Pipeline | Technical Story | User can view open opportunities grouped by stage. | 🟩 Done |
 | TS-012 | Polish CRM Creation Modals | Technical Story | Creation and interaction modals feel like polished Obsidian quick-capture flows. | 🟩 Done |
 | TS-013 | Kanban-style pipeline editing | Technical Story | Stages live in `Pipeline.md`; cards and columns support drag-and-drop; stages can be created, renamed and deleted. | 🟩 Done |
-| TS-014 | Remove dashboard and implement Set next action | Technical Story | Rejected Attention Dashboard is removed; `Set next action` updates the active CRM note. | 🟠 Awaiting Navigator validation |
+| TS-014 | Remove dashboard and implement Set next action | Technical Story | Rejected Attention Dashboard is removed; `Set next action` updates the active CRM note. | 🟩 Done |
 | TS-015 | Pipeline creation flow and formatting defaults | Technical Story | Board stays open after creation, BRL formats as pt-BR, empty relationship fields show no fake suggestions. | 🟩 Done |
+| TS-017 | CRM Home with tabs | Technical Story | Single CRM view with Pipeline, Contatos, Empresas and a placeholder Dashboard tab. | 🟩 Done |
 
 ## Navigator Revision
 
-After TS-012 the Navigator rejected the Attention Dashboard as low-value. TS-013 and TS-015 deepened the pipeline as the primary surface, and TS-014 removes the dashboard. DS-004 returns to Done once TS-014 is validated.
+After TS-012 the Navigator rejected the Attention Dashboard as low-value. TS-013 and TS-015 deepened the pipeline as the primary surface, and TS-014 removes the dashboard. TS-017 then unified the surfaces into a tabbed CRM Home. DS-004 was closed on 2026-10-05 as part of the v0.1 baseline.
 
 ## Done Condition
 
