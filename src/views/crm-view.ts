@@ -412,8 +412,18 @@ export class CrmView extends TextFileView {
 
     const titleRow = card.createDiv({ cls: "crm-pipeline-card-title-row" });
     titleRow.createEl("strong", { text: record.name, cls: "crm-pipeline-card-title" });
-    const cardMenuButton = titleRow.createEl("button", {
-      cls: "crm-pipeline-card-menu",
+    const actions = titleRow.createDiv({ cls: "crm-pipeline-card-actions" });
+    const interactionButton = actions.createEl("button", {
+      cls: "crm-pipeline-card-action crm-pipeline-interaction-button",
+      attr: { "aria-label": "Log interaction", title: "Log interaction" },
+    });
+    setIcon(interactionButton, "message-square-plus");
+    interactionButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.onLogInteraction(record, () => this.scheduleRender());
+    });
+    const cardMenuButton = actions.createEl("button", {
+      cls: "crm-pipeline-card-action",
       attr: { "aria-label": "Card options", title: "Card options" },
     });
     setIcon(cardMenuButton, "more-vertical");
@@ -428,16 +438,6 @@ export class CrmView extends TextFileView {
     this.renderCardRow(card, "activity", nextAction);
     this.renderCardRow(card, "calendar-days", formatDate(nextActionDate, resolveLocale(this.settings)));
     this.renderCardRow(card, "sticky-note", notes);
-
-    const interactionButton = card.createEl("button", {
-      cls: "crm-pipeline-interaction-button",
-      attr: { "aria-label": "Log interaction", title: "Log interaction" },
-    });
-    setIcon(interactionButton, "message-square-plus");
-    interactionButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.onLogInteraction(record, () => this.scheduleRender());
-    });
   }
 
   private openCardMenu(event: MouseEvent, record: CrmRecord): void {
