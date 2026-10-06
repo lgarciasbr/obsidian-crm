@@ -119,3 +119,43 @@ export function frontmatterList(content: string, key: string): string[] | null {
   }
   return capturing || out.length ? out : null;
 }
+
+// Manual card order lives in Pipeline.md as one list of opportunity ids for
+// the whole board; a card's column still comes from its stage. Cards missing
+// from the list (new, or created outside the board) go last, alphabetically.
+export function sortCards<T extends { id: string; name: string }>(cards: readonly T[], order: readonly string[]): T[] {
+  const rank = new Map(order.map((id, index) => [id, index]));
+  return [...cards].sort((a, b) => {
+    const ra = rank.get(a.id);
+    const rb = rank.get(b.id);
+    if (ra !== undefined && rb !== undefined) return ra - rb;
+    if (ra !== undefined) return -1;
+    if (rb !== undefined) return 1;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+// Returns the new board order after dropping `cardId` into a column whose
+// cards are currently shown as `column`, before `beforeId` or, when null, at
+// the end of that column.
+export function reorderCard(order: readonly string[], column: readonly string[], cardId: string, beforeId: string | null): string[] {
+  const next = order.filter((id) => id !== cardId);
+  const others = column.filter((id) => id !== cardId);
+  for (const id of others) {
+    if (!next.includes(id)) next.push(id);
+  }
+
+  if (beforeId && beforeId !== cardId && next.includes(beforeId)) {
+    next.splice(next.indexOf(beforeId), 0, cardId);
+    return next;
+  }
+
+  const last = others[others.length - 1];
+  next.splice(last === undefined ? next.length : next.indexOf(last) + 1, 0, cardId);
+  return next;
+}
+
+export function pruneCardOrder(order: readonly string[], existing: readonly string[]): string[] {
+  const valid = new Set(existing);
+  return [...new Set(order)].filter((id) => valid.has(id));
+}

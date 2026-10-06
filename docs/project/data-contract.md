@@ -31,6 +31,16 @@ Four record types, identified by the `type` frontmatter key:
 | `crm/opportunity` | `Opportunities/` | `Company - Name`           |
 | `crm/interaction` | `Interactions/`  | `YYYY-MM-DD - kind - Target`|
 
+### Pipeline.md (board state)
+
+`Pipeline.md` in the CRM root (`type: crm/pipeline`) holds the board state, not
+records: `stages` (column labels as the user typed them), `collapsed` (collapsed
+columns) and `card_order` (the user's manual card order, a list of opportunity
+`crm_id`s for the whole board). A card's column always comes from its `stage`;
+`card_order` only orders cards within columns. Opportunities missing from
+`card_order` are shown last in their column, alphabetically. Ids of deleted
+opportunities are pruned the next time the order is saved.
+
 ## 3. Identity and links
 
 - Every record carries a stable `crm_id` (`<prefix>-<slug>`), generated once at

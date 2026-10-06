@@ -3,7 +3,7 @@ import { CrmSettings, normalizeFolderPath, resolveLocale } from "../settings";
 import { ensureCrmFolders } from "../crm/folders";
 import { CrmRecord, CrmRepository } from "../crm/repository";
 import { DEFAULT_STAGES } from "../crm/integrity";
-import { addStage, formatDate, formatMoney, frontmatterList, moveStage, normalizeStage, removeStage, renameStage } from "../crm/pipeline";
+import { addStage, formatDate, formatMoney, frontmatterList, moveStage, normalizeStage, pruneCardOrder, removeStage, renameStage, reorderCard, sortCards } from "../crm/pipeline";
 
 export const CRM_VIEW_TYPE = "crm-view";
 
@@ -21,6 +21,7 @@ type CrmTab = "pipeline" | "companies" | "contacts";
 export class CrmView extends TextFileView {
   private dataValue = "";
   private stagesOverride: string[] | null = null;
+  private cardOrderOverride: string[] | null = null;
   private recordStageOverrides = new Map<string, string>();
   private collapsedStages = new Set<string>();
   private collapsedLoaded = false;
@@ -156,8 +157,8 @@ export class CrmView extends TextFileView {
       const cards = body.createDiv({ cls: "crm-pipeline-cards" });
       cards.addEventListener("dragover", (event) => event.preventDefault());
       cards.addEventListener("drop", async (event) => this.onPipelineDrop(event, stage));
-      for (const record of records.sort((a, b) => a.name.localeCompare(b.name))) {
-        this.renderCard(cards, record);
+      for (const record of this.sortedCards(records)) {
+        this.renderCard(cards, record, stage);
       }
 
       const addButton = body.createDiv({ text: "+ Add an opportunity", cls: "crm-pipeline-add" });
@@ -371,10 +372,30 @@ export class CrmView extends TextFileView {
     menu.showAtMouseEvent(event);
   }
 
-  private renderCard(container: HTMLElement, record: CrmRecord): void {
+  private renderCard(container: HTMLElement, record: CrmRecord, stage: string): void {
     const card = container.createDiv({ cls: "crm-pipeline-card" });
     card.draggable = true;
+    card.dataset.cardId = cardId(record);
     card.addEventListener("dragstart", (event) => this.onCardDragStart(event, record));
+    card.addEventListener("dragover", (event) => {
+      if (!event.dataTransfer?.types.includes("application/x-crm-card")) {
+        return;
+      }
+      event.preventDefault();
+      const before = dropsBefore(card, event);
+      card.toggleClass("is-drop-before", before);
+      card.toggleClass("is-drop-after", !before);
+    });
+    card.addEventListener("dragleave", () => card.removeClasses(["is-drop-before", "is-drop-after"]));
+    card.addEventListener("drop", async (event) => {
+      card.removeClasses(["is-drop-before", "is-drop-after"]);
+      const path = event.dataTransfer?.getData("application/x-crm-card") || "";
+      if (!path) {
+        return;
+      }
+      const next = card.nextElementSibling instanceof HTMLElement ? card.nextElementSibling.dataset.cardId ?? null : null;
+      await this.onCardDrop(event, stage, path, dropsBefore(card, event) ? cardId(record) : next);
+    });
     card.addEventListener("click", async (event) => {
       if (event.target instanceof HTMLSelectElement || event.target instanceof HTMLButtonElement) {
         return;
@@ -521,20 +542,43 @@ export class CrmView extends TextFileView {
   private async onPipelineDrop(event: DragEvent, stage: string): Promise<void> {
     const cardPath = event.dataTransfer?.getData("application/x-crm-card") || "";
     if (cardPath) {
-      await this.onCardDrop(event, stage, cardPath);
+      await this.onCardDrop(event, stage, cardPath, null);
       return;
     }
 
     await this.onColumnDrop(event, stage);
   }
 
-  private async onCardDrop(event: DragEvent, stage: string, path: string): Promise<void> {
+  // Drops a card into `stage`, before the card `beforeId` or at the end of
+  // the column, saving the new manual order in Pipeline.md.
+  private async onCardDrop(event: DragEvent, stage: string, path: string, beforeId: string | null): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
-    const record = this.repository.listRecords("crm/opportunity").find((item) => item.path === path);
-    if (record) {
-      await this.updateStage(record, stage);
+    const opportunities = this.repository.listRecords("crm/opportunity");
+    const record = opportunities.find((item) => item.path === path);
+    if (!record) {
+      return;
     }
+
+    const column = this.sortedCards(opportunities.filter((item) => this.recordStage(item) === normalizeStage(stage))).map(cardId);
+    const order = pruneCardOrder(reorderCard(this.cardOrder(), column, cardId(record), beforeId), opportunities.map(cardId));
+    this.cardOrderOverride = order;
+    if (this.recordStage(record) !== normalizeStage(stage)) {
+      await this.saveStage(record, stage);
+    }
+    await this.updatePipelineFrontmatter((frontmatter) => {
+      frontmatter.card_order = order;
+    });
+    this.render();
+  }
+
+  private cardOrder(): string[] {
+    return this.cardOrderOverride ?? this.frontmatterList("card_order") ?? [];
+  }
+
+  private sortedCards(records: CrmRecord[]): CrmRecord[] {
+    return sortCards(records.map((record) => ({ id: cardId(record), name: record.name, record })), this.cardOrder())
+      .map((item) => item.record);
   }
 
   private onColumnDragStart(event: DragEvent, stage: string): void {
@@ -677,7 +721,7 @@ export class CrmView extends TextFileView {
     this.dataValue = await this.app.vault.read(this.file);
   }
 
-  private async updateStage(record: CrmRecord, stage: string): Promise<void> {
+  private async saveStage(record: CrmRecord, stage: string): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(record.path);
     if (!(file instanceof TFile)) {
       return;
@@ -687,7 +731,6 @@ export class CrmView extends TextFileView {
       frontmatter.stage = normalizeStage(stage);
     });
     this.recordStageOverrides.set(record.path, normalizeStage(stage));
-    this.render();
   }
 }
 
@@ -808,4 +851,14 @@ function stringField(record: CrmRecord, field: string): string {
 
 function cleanLink(value: string): string {
   return value.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+}
+
+// Stable identity of a card in the manual order: crm_id, which survives renames.
+function cardId(record: CrmRecord): string {
+  return stringField(record, "crm_id") || record.path;
+}
+
+function dropsBefore(card: HTMLElement, event: DragEvent): boolean {
+  const rect = card.getBoundingClientRect();
+  return event.clientY < rect.top + rect.height / 2;
 }

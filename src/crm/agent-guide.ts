@@ -124,7 +124,8 @@ ${opportunity}\`\`\`
 Then:
 
 - add \`- [[${deal}]]\` under \`## Opportunities\` in the company note and in the contact's note;
-- if the contact's \`company\` is empty, set it to the opportunity's company and add the contact under the company's \`## People\`. If the contact already belongs to another company, leave it alone.
+- if the contact's \`company\` is empty, set it to the opportunity's company and add the contact under the company's \`## People\`. If the contact already belongs to another company, leave it alone;
+- do not touch \`Pipeline.md\`: the new card appears at the end of its column, and \`card_order\` there is the user's own priority order.
 
 ## Logging an interaction
 

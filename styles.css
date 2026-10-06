@@ -400,6 +400,15 @@
   border-color: var(--interactive-accent);
 }
 
+/* Drop indicator while reordering cards. */
+.crm-pipeline-card.is-drop-before {
+  box-shadow: 0 -3px 0 0 var(--interactive-accent);
+}
+
+.crm-pipeline-card.is-drop-after {
+  box-shadow: 0 3px 0 0 var(--interactive-accent);
+}
+
 .crm-pipeline-card-title-row {
   align-items: center;
   display: flex;

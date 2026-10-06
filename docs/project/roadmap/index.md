@@ -50,6 +50,7 @@ Rules:
 | TS-020 | Reliable relationship references | — (post-baseline) | 🟩 Done |
 | TS-021 | Commands, settings and test coverage review | — (post-baseline) | 🟩 Done |
 | TS-022 | Agent guide in the CRM folder | — (post-baseline) | 🟩 Done |
+| TS-023 | Manual card order in the pipeline | — (post-baseline) | 🟩 Done |
 
 ## Baseline — 2026-10-05
 

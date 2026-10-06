@@ -8,7 +8,10 @@ import {
   moveStage,
   normalizeStage,
   parseMoney,
+  pruneCardOrder,
   removeStage,
+  reorderCard,
+  sortCards,
   renameStage,
 } from "../src/crm/pipeline";
 import { validateFrontmatter } from "../src/crm/integrity";
@@ -83,4 +86,33 @@ test("frontmatterList reads a YAML list straight from file content", () => {
   assert.deepEqual(frontmatterList(content, "stages"), ["lead", "Qualified"]);
   assert.deepEqual(frontmatterList(content, "collapsed"), ["lead"]);
   assert.equal(frontmatterList(content, "missing"), null);
+});
+
+const card = (id: string, name: string) => ({ id, name });
+
+test("sortCards follows the saved order and puts unknown cards last, alphabetically", () => {
+  const cards = [card("c", "Charlie"), card("a", "Alpha"), card("x", "Zulu"), card("b", "Bravo"), card("y", "Yankee")];
+  assert.deepEqual(sortCards(cards, ["b", "gone", "c", "a"]).map((c) => c.id), ["b", "c", "a", "y", "x"]);
+  assert.deepEqual(sortCards(cards, []).map((c) => c.id), ["a", "b", "c", "y", "x"]);
+});
+
+test("reorderCard places a card before another card in its column", () => {
+  assert.deepEqual(reorderCard(["a", "b", "c"], ["a", "b"], "c", "a"), ["c", "a", "b"]);
+  assert.deepEqual(reorderCard(["a", "b", "c"], ["b", "c"], "a", "c"), ["b", "a", "c"]);
+});
+
+test("reorderCard without a target card puts the card at the end of the column", () => {
+  // Column shows a, b; another column holds z, which sits later in the global order.
+  assert.deepEqual(reorderCard(["a", "b", "z"], ["a", "b"], "z", null), ["a", "b", "z"]);
+  assert.deepEqual(reorderCard(["z", "a", "b"], ["a", "b"], "z", null), ["a", "b", "z"]);
+  assert.deepEqual(reorderCard([], [], "a", null), ["a"]);
+});
+
+test("reorderCard keeps the visible order of cards that were not in the saved order yet", () => {
+  // The column shows a (saved) then n1, n2 (never ordered, shown alphabetically at the end).
+  assert.deepEqual(reorderCard(["a"], ["a", "n1", "n2"], "n2", "a"), ["n2", "a", "n1"]);
+});
+
+test("pruneCardOrder drops ids of opportunities that no longer exist", () => {
+  assert.deepEqual(pruneCardOrder(["a", "gone", "b", "a"], ["a", "b"]), ["a", "b"]);
 });

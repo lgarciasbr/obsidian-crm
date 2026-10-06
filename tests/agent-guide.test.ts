@@ -24,6 +24,7 @@ test("the guide is written for the configured folder, stages, kinds and task tag
   assert.match(guide, /`lead`, `qualified`, `won`/);
   for (const kind of INTERACTION_KINDS) assert.match(guide, new RegExp(`\`${kind}\``));
   assert.match(guide, /#crm\/follow-up/);
+  assert.match(guide, /`card_order` there is the user's own priority order/);
   assert.ok(guide.includes(`${USER_NOTES_HEADING}\n`));
 });
 
