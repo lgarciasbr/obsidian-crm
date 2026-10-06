@@ -18,4 +18,4 @@ Cards can be reordered by drag and drop within a column (and placed at a positio
 
 ## Tests
 
-67 tests. Ordering, insertion and pruning are pure functions in `src/crm/pipeline.ts`. The drag-and-drop wiring in the view needs a manual check in Obsidian.
+67 tests. Ordering, insertion and pruning are pure functions in `src/crm/pipeline.ts`. The drag-and-drop wiring in the view was validated manually in Obsidian by the Navigator on 2026-10-06.
