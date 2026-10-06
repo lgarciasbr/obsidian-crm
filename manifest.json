@@ -1,7 +1,7 @@
 {
   "id": "crm",
   "name": "CRM",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.5.0",
   "description": "A local-first CRM for solo professionals to manage relationships, opportunities, and follow-ups in your vault.",
   "author": "Leandro Garcia",
