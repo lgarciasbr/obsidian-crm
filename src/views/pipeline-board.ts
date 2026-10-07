@@ -4,7 +4,7 @@ import { CrmRecord, CrmRepository } from "../crm/repository";
 import { DEFAULT_STAGES } from "../crm/integrity";
 import { cleanLink } from "../crm/links";
 import { Frontmatter, listValue } from "../crm/values";
-import { addStage, formatDate, formatMoney, frontmatterList, moveStage, normalizeStage, pruneCardOrder, removeStage, renameStage, reorderCard, sortCards } from "../crm/pipeline";
+import { addStage, formatDate, formatMoney, frontmatterList, moveStage, neighbourTarget, normalizeStage, pruneCardOrder, removeStage, renameStage, reorderCard, sortCards } from "../crm/pipeline";
 import { ConfirmModal, PipelineStageModal } from "./modals";
 import { cardId, recordText } from "./records";
 import type { CrmViewActions } from "./crm-view";
@@ -210,6 +210,30 @@ export class PipelineBoard {
 
   private openCardMenu(event: MouseEvent, record: CrmRecord): void {
     const menu = new Menu();
+    const stage = this.recordStage(record);
+    const column = this.sortedCards(
+      this.host.repository.listRecords("crm/opportunity").filter((item) => this.recordStage(item) === stage)
+    ).map(cardId);
+    for (const direction of ["up", "down"] as const) {
+      const target = neighbourTarget(column, cardId(record), direction);
+      if (target !== undefined) {
+        menu.addItem((item) =>
+          item
+            .setTitle(direction === "up" ? "Move up" : "Move down")
+            .setIcon(direction === "up" ? "arrow-up" : "arrow-down")
+            .onClick(() => void this.placeCard(record, stage, target))
+        );
+      }
+    }
+    for (const other of this.pipelineStages().filter((label) => normalizeStage(label) !== stage)) {
+      menu.addItem((item) =>
+        item
+          .setTitle(`Move to ${stageLabel(other)}`)
+          .setIcon("arrow-right")
+          .onClick(() => void this.placeCard(record, other, null))
+      );
+    }
+    menu.addSeparator();
     menu.addItem((item) =>
       item
         .setTitle("Edit")
@@ -306,12 +330,16 @@ export class PipelineBoard {
   private async onCardDrop(event: DragEvent, stage: string, path: string, beforeId: string | null): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
-    const opportunities = this.host.repository.listRecords("crm/opportunity");
-    const record = opportunities.find((item) => item.path === path);
-    if (!record) {
-      return;
+    const record = this.host.repository.listRecords("crm/opportunity").find((item) => item.path === path);
+    if (record) {
+      await this.placeCard(record, stage, beforeId);
     }
+  }
 
+  // Puts a card in `stage`, before `beforeId` or at the end of the column.
+  // Used by drag and drop and by the card menu (touch screens, keyboard).
+  private async placeCard(record: CrmRecord, stage: string, beforeId: string | null): Promise<void> {
+    const opportunities = this.host.repository.listRecords("crm/opportunity");
     const column = this.sortedCards(opportunities.filter((item) => this.recordStage(item) === normalizeStage(stage))).map(cardId);
     const order = pruneCardOrder(reorderCard(this.cardOrder(), column, cardId(record), beforeId), opportunities.map(cardId));
     this.cardOrderOverride = order;

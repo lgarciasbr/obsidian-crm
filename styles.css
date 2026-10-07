@@ -460,3 +460,37 @@
 }
 
 
+
+/* Phones: stack form fields, let the search take the full row, and show
+   one column per screen with swipe snapping. */
+.is-phone .crm-modal .setting-item {
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.is-phone .crm-modal .setting-item-control {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.is-phone .crm-contacts-controls {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.is-phone .crm-contacts-search {
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.is-phone .crm-pipeline-board {
+  scroll-snap-type: x mandatory;
+}
+
+.is-phone .crm-pipeline-column,
+.is-phone .crm-pipeline-add-column {
+  flex-basis: 85vw;
+  scroll-snap-align: start;
+}

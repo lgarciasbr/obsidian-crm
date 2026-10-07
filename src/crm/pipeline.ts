@@ -159,3 +159,13 @@ export function pruneCardOrder(order: readonly string[], existing: readonly stri
   const valid = new Set(existing);
   return [...new Set(order)].filter((id) => valid.has(id));
 }
+
+// For "Move up/down" (touch screens, keyboard): the `beforeId` to pass to
+// reorderCard, null for "end of column", or undefined when the card cannot move.
+export function neighbourTarget(column: readonly string[], cardId: string, direction: "up" | "down"): string | null | undefined {
+  const index = column.indexOf(cardId);
+  if (index === -1) return undefined;
+  if (direction === "up") return index > 0 ? column[index - 1] : undefined;
+  if (index >= column.length - 1) return undefined;
+  return index + 2 < column.length ? column[index + 2] : null;
+}

@@ -6,6 +6,7 @@ import {
   formatMoney,
   frontmatterList,
   moveStage,
+  neighbourTarget,
   normalizeStage,
   parseMoney,
   pruneCardOrder,
@@ -115,4 +116,17 @@ test("reorderCard keeps the visible order of cards that were not in the saved or
 
 test("pruneCardOrder drops ids of opportunities that no longer exist", () => {
   assert.deepEqual(pruneCardOrder(["a", "gone", "b", "a"], ["a", "b"]), ["a", "b"]);
+});
+
+test("moving a card up or down targets the right neighbour", () => {
+  const column = ["a", "b", "c"];
+  assert.equal(neighbourTarget(column, "b", "up"), "a");
+  assert.equal(neighbourTarget(column, "c", "up"), "b");
+  assert.equal(neighbourTarget(column, "a", "up"), undefined, "already first");
+  assert.equal(neighbourTarget(column, "a", "down"), "c", "goes before the card after its neighbour");
+  assert.equal(neighbourTarget(column, "b", "down"), null, "becomes last");
+  assert.equal(neighbourTarget(column, "c", "down"), undefined, "already last");
+  // Applied with reorderCard, the result is the expected swap.
+  assert.deepEqual(reorderCard(column, column, "a", neighbourTarget(column, "a", "down")!), ["b", "a", "c"]);
+  assert.deepEqual(reorderCard(column, column, "b", neighbourTarget(column, "b", "down")!), ["a", "c", "b"]);
 });
