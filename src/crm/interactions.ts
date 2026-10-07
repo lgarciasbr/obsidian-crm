@@ -84,7 +84,7 @@ export class InteractionCreator {
     nextActionDate: string
   ): Promise<void> {
     // Contract R1/R2: never roll back last_contact, never wipe a pending
-    // next_action with an empty incoming action. See docs/project/data-contract.md.
+    // next_action with an empty incoming action. See docs/data-contract.md.
     await this.fileManager.processFrontMatter(file, (frontmatter: Frontmatter) => {
       frontmatter.last_contact = resolveLastContact(textValue(frontmatter.last_contact), lastContact);
       const merged = resolveNextAction(

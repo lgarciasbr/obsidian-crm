@@ -1,5 +1,5 @@
 // Pure vault-level validation over CRM records. No "obsidian" import.
-// See docs/project/data-contract.md.
+// See docs/data-contract.md.
 import { validateFrontmatter, findDuplicateBasenames, Violation } from "./integrity";
 
 export interface RecordInput {

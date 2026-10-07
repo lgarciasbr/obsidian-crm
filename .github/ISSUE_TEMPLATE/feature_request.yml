@@ -1,0 +1,16 @@
+name: Idea or improvement
+description: Suggest something that would make the CRM more useful.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the situation and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: Your idea, if you have one. Keep in mind the plugin stays local-first (no network, no telemetry).

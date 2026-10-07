@@ -5,6 +5,6 @@
   "minAppVersion": "1.5.0",
   "description": "A local-first CRM for solo professionals to manage relationships, opportunities, and follow-ups in your vault.",
   "author": "Leandro Garcia",
-  "authorUrl": "",
+  "authorUrl": "https://github.com/lgarciasbr",
   "isDesktopOnly": false
 }

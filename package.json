@@ -2,6 +2,14 @@
   "name": "obsidian-crm",
   "version": "0.2.0",
   "description": "A local-first CRM for solo professionals inside Obsidian.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lgarciasbr/obsidian-crm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lgarciasbr/obsidian-crm/issues"
+  },
+  "homepage": "https://github.com/lgarciasbr/obsidian-crm#readme",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

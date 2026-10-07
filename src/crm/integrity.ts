@@ -1,6 +1,6 @@
 // Pure integrity rules for the CRM data contract.
 // This module MUST NOT import from "obsidian" so it can be unit-tested in Node.
-// See docs/project/data-contract.md.
+// See docs/data-contract.md.
 
 export type CrmType = "crm/person" | "crm/company" | "crm/opportunity" | "crm/interaction";
 
