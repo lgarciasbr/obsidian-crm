@@ -130,3 +130,10 @@ test("resolveUnique refuses to guess on ambiguous names", () => {
   ]);
   assert.equal(res2.status, "ambiguous");
 });
+
+test("non-text stage or kind values are rejected, not treated as empty", () => {
+  const opp = validateFrontmatter("crm/opportunity", { type: "crm/opportunity", crm_id: "o", name: "D", stage: { odd: true } });
+  assert.ok(opp.some((x) => x.code === "BAD_ENUM" && x.field === "stage" && x.message.includes('{"odd":true}')));
+  const ok = validateFrontmatter("crm/opportunity", { type: "crm/opportunity", crm_id: "o", name: "D", stage: null });
+  assert.deepEqual(ok, []);
+});

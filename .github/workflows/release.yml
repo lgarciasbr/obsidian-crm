@@ -27,6 +27,7 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match manifest version $version"
             exit 1
           fi
+      - run: npm run lint
       - run: npm run build
       - run: npm test
       - name: Publish release

@@ -57,3 +57,21 @@ test("interaction note carries the task line under Next action", () => {
 test("an empty list in frontmatter is written as [] instead of a blank line", () => {
   assert.equal(frontmatter({ people: [], tags: ["x"] }, ""), '---\npeople: []\ntags:\n  - "x"\n---\n\n');
 });
+
+test("cleanLink strips wikilink brackets and aliases", async () => {
+  const { cleanLink } = await import("../src/crm/links");
+  assert.equal(cleanLink("[[Acme]]"), "Acme");
+  assert.equal(cleanLink("[[Acme - Deal|Deal]]"), "Acme - Deal");
+  assert.equal(cleanLink("  Acme "), "Acme");
+});
+
+test("frontmatter values are read defensively", async () => {
+  const { listValue, textValue } = await import("../src/crm/values");
+  assert.equal(textValue("  Acme "), "Acme");
+  assert.equal(textValue(15000), "15000");
+  assert.equal(textValue(new Date("2026-10-05T00:00:00Z")), "2026-10-05");
+  assert.equal(textValue({ nested: true }), "");
+  assert.equal(textValue(null), "");
+  assert.deepEqual(listValue(["a", 2, { x: 1 }, ""]), ["a", "2"]);
+  assert.deepEqual(listValue("not a list"), []);
+});

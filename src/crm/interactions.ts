@@ -7,6 +7,7 @@ import { ensureCrmFolders } from "./folders";
 import { CrmRepository } from "./repository";
 import { EntityCreator, EntityRef } from "./entity-creation";
 import { followUpTask } from "./next-action";
+import { Frontmatter, textValue } from "./values";
 import { addLinkToSection } from "./markdown-sections";
 import { resolveLastContact, resolveNextAction } from "./integrity";
 import { EntityFormResult } from "./types";
@@ -49,7 +50,7 @@ export class InteractionCreator {
       task,
     });
 
-    const file = await this.vault.create(path, content) as TFile;
+    const file = await this.vault.create(path, content);
     const failedUpdates: string[] = [];
     for (const related of [person, company, opportunity]) {
       if (!related) {
@@ -58,7 +59,7 @@ export class InteractionCreator {
       try {
         await this.updateRecordFrontmatter(related.file, date, values.next_action || "", values.next_action_date || "");
         await addLinkToSection(this.vault, related.file, "History", `[[${file.basename}]]`);
-      } catch (_error) {
+      } catch {
         failedUpdates.push(related.file.basename);
       }
     }
@@ -84,10 +85,10 @@ export class InteractionCreator {
   ): Promise<void> {
     // Contract R1/R2: never roll back last_contact, never wipe a pending
     // next_action with an empty incoming action. See docs/project/data-contract.md.
-    await this.fileManager.processFrontMatter(file, (frontmatter) => {
-      frontmatter.last_contact = resolveLastContact(String(frontmatter.last_contact ?? ""), lastContact);
+    await this.fileManager.processFrontMatter(file, (frontmatter: Frontmatter) => {
+      frontmatter.last_contact = resolveLastContact(textValue(frontmatter.last_contact), lastContact);
       const merged = resolveNextAction(
-        { action: String(frontmatter.next_action ?? ""), date: String(frontmatter.next_action_date ?? "") },
+        { action: textValue(frontmatter.next_action), date: textValue(frontmatter.next_action_date) },
         nextAction,
         nextActionDate
       );

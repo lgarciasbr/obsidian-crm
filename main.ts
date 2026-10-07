@@ -3,13 +3,14 @@ import { EntityCreator } from "./src/crm/entity-creation";
 import { DEFAULT_STAGES, INTERACTION_KINDS } from "./src/crm/integrity";
 import { NEXT_ACTION_TYPES, setNextAction } from "./src/crm/next-action";
 import { updateAgentGuide } from "./src/crm/agent-guide";
+import { cleanLink } from "./src/crm/links";
+import { Frontmatter, listValue, textValue } from "./src/crm/values";
 import { ensureCrmFolders } from "./src/crm/folders";
 import { InteractionCreator } from "./src/crm/interactions";
 import { CrmRepository } from "./src/crm/repository";
 import { validateRecords, renderReport, RecordInput } from "./src/crm/validator";
 import { EntityModal } from "./src/ui/entity-modal";
 import { EntityField } from "./src/crm/types";
-import { safeFileName } from "./src/crm/file-names";
 import {
   ensurePipelineFile,
   CRM_VIEW_TYPE,
@@ -23,7 +24,7 @@ import {
 } from "./src/settings";
 
 export default class CrmPlugin extends Plugin {
-  settings: CrmSettings;
+  settings!: CrmSettings;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -40,8 +41,8 @@ export default class CrmPlugin extends Plugin {
           addOpportunity: (stage, onCreated) => this.openCreateOpportunityModal(stage, false, onCreated),
           logInteraction: (record, onCreated) => this.openLogInteractionModal({
             opportunity: record.basename,
-            company: this.cleanLink(String(record.frontmatter.company || "")),
-            person: this.cleanLink(String(record.frontmatter.contact || "")),
+            company: cleanLink(textValue(record.frontmatter.company)),
+            person: cleanLink(textValue(record.frontmatter.contact)),
           }, onCreated, true),
           editOpportunity: (record, onEdited) => this.openEditOpportunityModal(record, onEdited),
           deleteOpportunity: async (record) => {
@@ -160,7 +161,7 @@ export default class CrmPlugin extends Plugin {
       file = existing;
     } else {
       await ensureCrmFolders(this.app.vault, this.settings);
-      file = await this.app.vault.create(path, content) as TFile;
+      file = await this.app.vault.create(path, content);
     }
 
     const issues = report.records.length + (report.duplicates.length ? 1 : 0);
@@ -176,7 +177,8 @@ export default class CrmPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const saved = (await this.loadData()) as Partial<CrmSettings> | null;
+    this.settings = { ...DEFAULT_SETTINGS, ...saved };
   }
 
   async saveSettings(): Promise<void> {
@@ -198,15 +200,15 @@ export default class CrmPlugin extends Plugin {
   // The active note when it is a CRM person, company or opportunity.
   private activeEntityNote(): TFile | null {
     const file = this.app.workspace.getActiveFile();
-    const type = file ? this.app.metadataCache.getFileCache(file)?.frontmatter?.type : null;
-    return file && NEXT_ACTION_TYPES.includes(String(type)) ? file : null;
+    const frontmatter: Frontmatter | undefined = file ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
+    return file && NEXT_ACTION_TYPES.includes(textValue(frontmatter?.type)) ? file : null;
   }
 
   private openSetNextActionModal(file: TFile): void {
-    const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    const frontmatter: Frontmatter | undefined = this.app.metadataCache.getFileCache(file)?.frontmatter;
     new EntityModal(this.app, "Set next action", [
-      { key: "next_action", label: "Next action", defaultValue: String(frontmatter?.next_action || ""), required: true },
-      { key: "next_action_date", label: "Next action date", inputType: "date", defaultValue: String(frontmatter?.next_action_date || "") },
+      { key: "next_action", label: "Next action", defaultValue: textValue(frontmatter?.next_action), required: true },
+      { key: "next_action_date", label: "Next action date", inputType: "date", defaultValue: textValue(frontmatter?.next_action_date) },
     ], async (values) => {
       await setNextAction(this.app.vault, this.app.fileManager, file, values.next_action, values.next_action_date, this.settings);
       new Notice("Next action updated.");
@@ -274,11 +276,11 @@ export default class CrmPlugin extends Plugin {
     const fm = record.frontmatter;
     const defaults = {
       name: record.name,
-      company: this.cleanLink(String(fm.company || "")),
-      contact: this.cleanLink(String(fm.contact || "")),
-      value: String(fm.value || ""),
-      stage: String(fm.stage || ""),
-      notes: String(fm.notes || ""),
+      company: cleanLink(textValue(fm.company)),
+      contact: cleanLink(textValue(fm.contact)),
+      value: textValue(fm.value),
+      stage: textValue(fm.stage),
+      notes: textValue(fm.notes),
     };
     new EntityModal(this.app, "Edit opportunity", this.opportunityFields(defaults), async (values) => {
       const file = this.app.vault.getAbstractFileByPath(record.path);
@@ -298,8 +300,8 @@ export default class CrmPlugin extends Plugin {
       return;
     }
 
-    await this.app.fileManager.processFrontMatter(abstractFile, (frontmatter) => {
-      if (!Array.isArray(frontmatter.stages) || !frontmatter.stages.length) {
+    await this.app.fileManager.processFrontMatter(abstractFile, (frontmatter: Frontmatter) => {
+      if (!listValue(frontmatter.stages).length) {
         frontmatter.stages = [...DEFAULT_STAGES];
       }
     });
@@ -307,16 +309,9 @@ export default class CrmPlugin extends Plugin {
 
   private pipelineStages(): string[] {
     const path = `${normalizeFolderPath(this.settings.crmRoot)}/Pipeline.md`;
-    const frontmatter = this.app.metadataCache.getCache(path)?.frontmatter;
-    const stages = frontmatter?.stages;
-    if (Array.isArray(stages)) {
-      const cleanStages = stages.map((stage) => String(stage).trim()).filter(Boolean);
-      if (cleanStages.length) {
-        return cleanStages;
-      }
-    }
-
-    return [...DEFAULT_STAGES];
+    const frontmatter: Frontmatter | undefined = this.app.metadataCache.getCache(path)?.frontmatter;
+    const stages = listValue(frontmatter?.stages);
+    return stages.length ? stages : [...DEFAULT_STAGES];
   }
 
   private async openOrCreateCrm(): Promise<void> {
@@ -324,7 +319,7 @@ export default class CrmPlugin extends Plugin {
     await ensureCrmFolders(this.app.vault, this.settings);
     const file = await ensurePipelineFile(this.app.vault, this.settings);
     if (!file) {
-      new Notice("Could not create CRM/Pipeline.md.");
+      new Notice(`Could not create ${normalizeFolderPath(this.settings.crmRoot)}/Pipeline.md.`);
       return;
     }
 
@@ -360,17 +355,15 @@ export default class CrmPlugin extends Plugin {
       return;
     }
 
-    window.setTimeout(async () => {
-      await this.ensurePipelineStages(file);
-      await this.openCrmFile(file);
-    }, 0);
+    window.setTimeout(() => void this.openPipelineFile(file), 0);
+  }
+
+  private async openPipelineFile(file: TFile): Promise<void> {
+    await this.ensurePipelineStages(file);
+    await this.openCrmFile(file);
   }
 
   private isPipelineFile(path: string): boolean {
     return path === `${normalizeFolderPath(this.settings.crmRoot)}/Pipeline.md`;
-  }
-
-  private cleanLink(value: string): string {
-    return value.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
   }
 }

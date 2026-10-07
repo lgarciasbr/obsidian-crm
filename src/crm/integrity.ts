@@ -89,10 +89,14 @@ const REQUIRED_NAMED = ["name"];
 // An optional enum is valid when unset (undefined/null/empty) OR within the set.
 // YAML serializes an empty field as null, which must count as "not set".
 function enumOk(value: unknown, set: readonly string[]): boolean {
-  if (value === undefined || value === null || String(value).trim() === "") {
+  if (value === undefined || value === null) {
     return true;
   }
-  return set.includes(String(value));
+  if (typeof value !== "string" && typeof value !== "number") {
+    return false;
+  }
+  const text = String(value).trim();
+  return text === "" || set.includes(text);
 }
 
 function dateOk(value: unknown): boolean {
@@ -132,8 +136,8 @@ export function validateFrontmatter(
       break;
     case "crm/opportunity":
       // Stage labels keep the user's casing in Pipeline.md; records store them lowercase.
-      if (!enumOk(fm.stage === undefined || fm.stage === null ? fm.stage : String(fm.stage).toLowerCase(), stages.map((stage) => stage.trim().toLowerCase()))) {
-        violations.push({ code: "BAD_ENUM", field: "stage", message: `Invalid stage: ${String(fm.stage)}` });
+      if (!enumOk(typeof fm.stage === "string" ? fm.stage.toLowerCase() : fm.stage, stages.map((stage) => stage.trim().toLowerCase()))) {
+        violations.push({ code: "BAD_ENUM", field: "stage", message: `Invalid stage: ${describe(fm.stage)}` });
       }
       if (!dateOk(fm.created)) {
         violations.push({ code: "BAD_DATE", field: "created", message: "Field created must be empty or YYYY-MM-DD" });
@@ -144,7 +148,7 @@ export function validateFrontmatter(
         violations.push({ code: "BAD_DATE", field: "date", message: "Interaction date is required and must be YYYY-MM-DD" });
       }
       if (!enumOk(fm.kind, INTERACTION_KINDS)) {
-        violations.push({ code: "BAD_ENUM", field: "kind", message: `Invalid kind: ${String(fm.kind)}` });
+        violations.push({ code: "BAD_ENUM", field: "kind", message: `Invalid kind: ${describe(fm.kind)}` });
       }
       break;
     default:
@@ -194,4 +198,8 @@ export function resolveUnique(
     return { status: "unique", basename: pool[0].basename };
   }
   return { status: "ambiguous", matches: pool.map((c) => c.basename) };
+}
+
+function describe(value: unknown): string {
+  return typeof value === "string" || typeof value === "number" ? String(value) : JSON.stringify(value) ?? String(value);
 }

@@ -1,6 +1,7 @@
 import type { FileManager, TFile, Vault } from "obsidian";
 import type { CrmSettings } from "../settings";
 import { addLineToSectionInFile } from "./markdown-sections";
+import type { Frontmatter } from "./values";
 
 // Record types whose notes carry a next action.
 export const NEXT_ACTION_TYPES = ["crm/person", "crm/company", "crm/opportunity"];
@@ -27,7 +28,7 @@ export async function setNextAction(
   const cleanAction = action?.trim() || "";
   const cleanDate = date?.trim() || "";
 
-  await fileManager.processFrontMatter(file, (frontmatter) => {
+  await fileManager.processFrontMatter(file, (frontmatter: Frontmatter) => {
     frontmatter.next_action = cleanAction;
     frontmatter.next_action_date = cleanDate;
   });

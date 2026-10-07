@@ -81,7 +81,7 @@ export function formatMoney(value: string, currency: string, locale: string): st
   const code = (currency || "BRL").toUpperCase();
   try {
     return new Intl.NumberFormat(locale, { style: "currency", currency: code }).format(number);
-  } catch (_error) {
+  } catch {
     return `${code} ${number}`;
   }
 }
@@ -93,7 +93,7 @@ export function formatDate(iso: string, locale: string): string {
   const [y, m, d] = clean.split("-").map(Number);
   try {
     return new Intl.DateTimeFormat(locale, { timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
-  } catch (_error) {
+  } catch {
     return clean;
   }
 }

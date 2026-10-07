@@ -1,4 +1,5 @@
 import { MetadataCache, TFile, TFolder, Vault } from "obsidian";
+import type { Frontmatter } from "./values";
 import { CrmSettings, normalizeFolderPath } from "../settings";
 
 export type CrmRecordType = "crm/person" | "crm/company" | "crm/opportunity" | "crm/interaction";
@@ -72,7 +73,7 @@ export class CrmRepository {
   }
 
   private recordFromFile(file: TFile): CrmRecord | null {
-    const frontmatter = this.metadataCache.getFileCache(file)?.frontmatter;
+    const frontmatter: Frontmatter | undefined = this.metadataCache.getFileCache(file)?.frontmatter;
     const type = frontmatter?.type;
 
     if (typeof type !== "string" || !CRM_RECORD_TYPES.has(type)) {

@@ -8,8 +8,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
-    "noEmitOnError": true,
-    "strictPropertyInitialization": false
+    "noEmitOnError": true
   },
   "include": [
     "src/crm/integrity.ts",

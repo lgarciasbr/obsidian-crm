@@ -11,7 +11,7 @@ export function safeExternalUrl(value: string): string | null {
   try {
     const url = new URL(SCHEME.test(clean) ? clean : `https://${clean}`);
     return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
-  } catch (_error) {
+  } catch {
     return null;
   }
 }

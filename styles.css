@@ -328,11 +328,9 @@
   display: none;
 }
 
+/* Icon buttons use Obsidian's clickable-icon class for the native look. */
 .crm-pipeline-column-menu {
   align-items: center;
-  background: transparent !important;
-  border: 0;
-  box-shadow: none !important;
   color: var(--text-muted);
   cursor: pointer;
   display: inline-flex;
@@ -343,10 +341,7 @@
 }
 
 .crm-pipeline-column-menu:hover,
-.crm-pipeline-column-menu:focus,
-.crm-pipeline-column-menu:active {
-  background: transparent !important;
-  box-shadow: none !important;
+.crm-pipeline-column-menu:focus {
   color: var(--text-normal);
 }
 
@@ -431,9 +426,6 @@
 
 .crm-pipeline-card-action {
   align-items: center;
-  background: transparent !important;
-  border: 0;
-  box-shadow: none !important;
   color: var(--text-muted);
   cursor: pointer;
   display: inline-flex;

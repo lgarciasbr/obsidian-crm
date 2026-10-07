@@ -2,6 +2,8 @@ import { FileManager, MetadataCache, Notice, TFile, Vault, Workspace } from "obs
 import { CrmSettings, normalizeFolderPath } from "../settings";
 import { today } from "./dates";
 import { safeFileName } from "./file-names";
+import { cleanLink } from "./links";
+import { Frontmatter, listValue, textValue } from "./values";
 import { companyNote, opportunityNote, opportunityTitle, personNote } from "./templates";
 import { EntityFormResult } from "./types";
 import { ensureCrmFolders } from "./folders";
@@ -69,15 +71,15 @@ export class EntityCreator {
   // Applies an edit to an existing opportunity and keeps every reference in
   // sync: frontmatter, file name, body sections and backlinks on both sides.
   async updateOpportunity(file: TFile, values: EntityFormResult): Promise<TFile> {
-    const before = this.metadataCache.getFileCache(file)?.frontmatter ?? {};
-    const previousCompany = this.findLinked(String(before.company ?? ""), file);
-    const previousContact = this.findLinked(String(before.contact ?? ""), file);
+    const before: Frontmatter = this.metadataCache.getFileCache(file)?.frontmatter ?? {};
+    const previousCompany = this.findLinked(textValue(before.company), file);
+    const previousContact = this.findLinked(textValue(before.contact), file);
 
     const company = await this.resolveCompany(values, "company");
     const contact = await this.resolvePerson(values, "contact", company);
     const companyValue = company?.link ?? relatedValue(values, "company");
     const contactValue = contact?.link ?? relatedValue(values, "contact");
-    const name = values.name?.trim() || String(before.name ?? file.basename);
+    const name = values.name?.trim() || (textValue(before.name) || file.basename);
 
     for (const [previous, current] of [[previousCompany, company], [previousContact, contact]] as const) {
       if (previous && previous.file.path !== current?.file.path) {
@@ -85,7 +87,7 @@ export class EntityCreator {
       }
     }
 
-    await this.fileManager.processFrontMatter(file, (fm) => {
+    await this.fileManager.processFrontMatter(file, (fm: Frontmatter) => {
       fm.name = name;
       fm.company = companyValue;
       fm.contact = contactValue;
@@ -109,19 +111,19 @@ export class EntityCreator {
   // after removing every reference to it: the company's and contact's
   // Opportunities sections and its place in the board's card_order.
   async deleteOpportunity(file: TFile): Promise<void> {
-    const fm = this.metadataCache.getFileCache(file)?.frontmatter ?? {};
-    for (const linked of [this.findLinked(String(fm.company ?? ""), file), this.findLinked(String(fm.contact ?? ""), file)]) {
+    const fm: Frontmatter = this.metadataCache.getFileCache(file)?.frontmatter ?? {};
+    for (const linked of [this.findLinked(textValue(fm.company), file), this.findLinked(textValue(fm.contact), file)]) {
       if (linked) {
         await removeLinkFromSection(this.vault, linked.file, "Opportunities", linkTo(file));
       }
     }
 
-    const id = String(fm.crm_id ?? "");
+    const id = textValue(fm.crm_id);
     const pipeline = this.vault.getAbstractFileByPath(`${normalizeFolderPath(this.settings.crmRoot)}/Pipeline.md`);
     if (id && pipeline instanceof TFile) {
-      await this.fileManager.processFrontMatter(pipeline, (pipelineFm) => {
+      await this.fileManager.processFrontMatter(pipeline, (pipelineFm: Frontmatter) => {
         if (Array.isArray(pipelineFm.card_order)) {
-          pipelineFm.card_order = pipelineFm.card_order.filter((item: unknown) => item !== id);
+          pipelineFm.card_order = listValue(pipelineFm.card_order).filter((item) => item !== id);
         }
       });
     }
@@ -152,8 +154,8 @@ export class EntityCreator {
 
     let belongsToCompany = Boolean(newName);
     if (!newName) {
-      await this.fileManager.processFrontMatter(person.file, (fm) => {
-        const current = String(fm.company ?? "").trim();
+      await this.fileManager.processFrontMatter(person.file, (fm: Frontmatter) => {
+        const current = textValue(fm.company);
         if (!current) {
           fm.company = company.link;
         }
@@ -173,7 +175,7 @@ export class EntityCreator {
   }
 
   private findLinked(link: string, source: TFile): EntityRef | null {
-    const target = link.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
+    const target = cleanLink(link);
     const file = target ? this.metadataCache.getFirstLinkpathDest(target, source.path) : null;
     return file ? refTo(file) : null;
   }
@@ -235,7 +237,7 @@ export class EntityCreator {
   }
 
   private async createAndMaybeOpen(path: string, content: string, openFile: boolean): Promise<TFile> {
-    const file = await this.vault.create(path, content) as TFile;
+    const file = await this.vault.create(path, content);
     new Notice(`Created ${path}`);
     if (openFile) {
       await this.workspace.getLeaf("tab").openFile(file);

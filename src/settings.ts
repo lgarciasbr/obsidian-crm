@@ -25,7 +25,7 @@ export function resolveLocale(settings: CrmSettings): string {
   }
   try {
     return Intl.DateTimeFormat().resolvedOptions().locale || "en";
-  } catch (_error) {
+  } catch {
     return "en";
   }
 }
@@ -70,7 +70,7 @@ export class CrmSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Create follow-up tasks")
-      .setDesc("Add a Markdown task when an interaction or Set next action has a next action.")
+      .setDesc("Add a Markdown task when an interaction or a next action is saved.")
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.createTasksByDefault)
@@ -111,7 +111,7 @@ export class CrmSettingTab extends PluginSettingTab {
       .setDesc("Locale for displaying dates and numbers (e.g. pt-BR, en-US). Leave empty to use the system locale. Storage stays ISO.")
       .addText((text) =>
         text
-          .setPlaceholder("auto")
+          .setPlaceholder("Auto")
           .setValue(this.plugin.settings.locale)
           .onChange(async (value) => {
             this.plugin.settings.locale = (value || "").trim();

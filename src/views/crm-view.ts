@@ -4,6 +4,8 @@ import { ensureCrmFolders } from "../crm/folders";
 import { CrmRecord, CrmRepository } from "../crm/repository";
 import { DEFAULT_STAGES } from "../crm/integrity";
 import { safeExternalUrl } from "../crm/urls";
+import { cleanLink } from "../crm/links";
+import { Frontmatter, listValue, textValue } from "../crm/values";
 import { addStage, formatDate, formatMoney, frontmatterList, moveStage, normalizeStage, pruneCardOrder, removeStage, renameStage, reorderCard, sortCards } from "../crm/pipeline";
 
 export const CRM_VIEW_TYPE = "crm-view";
@@ -128,7 +130,7 @@ export class CrmView extends TextFileView {
       column.draggable = true;
       column.addEventListener("dragstart", (event) => this.onColumnDragStart(event, stage));
       column.addEventListener("dragover", (event) => event.preventDefault());
-      column.addEventListener("drop", async (event) => this.onPipelineDrop(event, stage));
+      column.addEventListener("drop", (event) => void this.onPipelineDrop(event, stage));
       const records = opportunities.filter((record) => this.recordStage(record) === normalizeStage(stage));
 
       const header = column.createDiv({ cls: "crm-pipeline-column-header" });
@@ -143,14 +145,14 @@ export class CrmView extends TextFileView {
       chevron.addEventListener("click", (event) => {
         event.stopPropagation();
         event.preventDefault();
-        this.toggleStageCollapsed(stage);
+        void this.toggleStageCollapsed(stage);
       });
-      headerLeft.createEl("span", { text: stageLabel(stage) });
+      headerLeft.createSpan({ text: stageLabel(stage) });
 
       const headerRight = header.createDiv({ cls: "crm-pipeline-column-actions" });
-      headerRight.createEl("span", { text: String(records.length), cls: "crm-pipeline-count" });
+      headerRight.createSpan({ text: String(records.length), cls: "crm-pipeline-count" });
       const menuButton = headerRight.createEl("button", {
-        cls: "crm-pipeline-column-menu",
+        cls: "clickable-icon crm-pipeline-column-menu",
         attr: { "aria-label": "Stage options", title: "Stage options" },
       });
       setIcon(menuButton, "more-vertical");
@@ -163,7 +165,7 @@ export class CrmView extends TextFileView {
 
       const cards = body.createDiv({ cls: "crm-pipeline-cards" });
       cards.addEventListener("dragover", (event) => event.preventDefault());
-      cards.addEventListener("drop", async (event) => this.onPipelineDrop(event, stage));
+      cards.addEventListener("drop", (event) => void this.onPipelineDrop(event, stage));
       for (const record of this.sortedCards(records)) {
         this.renderCard(cards, record, stage);
       }
@@ -171,10 +173,10 @@ export class CrmView extends TextFileView {
       const addButton = body.createDiv({ text: "+ Add an opportunity", cls: "crm-pipeline-add" });
       addButton.setAttr("role", "button");
       addButton.setAttr("tabindex", "0");
-      addButton.addEventListener("click", async () => {
+      addButton.addEventListener("click", () => {
         this.actions.addOpportunity(stage, () => this.render());
       });
-      addButton.addEventListener("keydown", async (event) => {
+      addButton.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           this.actions.addOpportunity(stage, () => this.render());
@@ -186,11 +188,11 @@ export class CrmView extends TextFileView {
     addColumn.setAttr("role", "button");
     addColumn.setAttr("tabindex", "0");
     addColumn.setText("+ Add a stage");
-    addColumn.addEventListener("click", async () => this.addColumn());
-    addColumn.addEventListener("keydown", async (event) => {
+    addColumn.addEventListener("click", () => void this.addColumn());
+    addColumn.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        await this.addColumn();
+        void this.addColumn();
       }
     });
   }
@@ -279,11 +281,11 @@ export class CrmView extends TextFileView {
     const item = container.createDiv({ cls: "crm-list-item" });
     const main = item.createDiv({ cls: "crm-list-item-main" });
     const name = main.createSpan({ text: contact.name, cls: "crm-list-title crm-link" });
-    name.addEventListener("click", () => this.openRecord(contact.record));
+    name.addEventListener("click", () => void this.openRecord(contact.record));
 
     if (contact.company) {
       const company = main.createSpan({ text: contact.company, cls: "crm-list-meta crm-link" });
-      company.addEventListener("click", () => this.openRelatedRecord("crm/company", contact.company));
+      company.addEventListener("click", () => void this.openRelatedRecord("crm/company", contact.company));
     }
 
     const details = [contact.email, contact.phone].filter(Boolean);
@@ -299,7 +301,7 @@ export class CrmView extends TextFileView {
     const item = container.createDiv({ cls: "crm-list-item" });
     const main = item.createDiv({ cls: "crm-list-item-main" });
     const name = main.createSpan({ text: contact.name, cls: "crm-list-title crm-link" });
-    name.addEventListener("click", () => this.openRecord(contact.record));
+    name.addEventListener("click", () => void this.openRecord(contact.record));
     main.createSpan({ text: `${contact.opportunityCount} opportunit${contact.opportunityCount === 1 ? "y" : "ies"}`, cls: "crm-list-meta" });
 
     const details = [contact.site, contact.industry].filter(Boolean);
@@ -352,16 +354,15 @@ export class CrmView extends TextFileView {
     return [...people, ...companies].sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  private renderToolbarButton(container: HTMLElement, icon: string, label: string, onClick: () => void): void {
+  private renderToolbarButton(container: HTMLElement, icon: string, label: string, onClick: () => Promise<void> | void): void {
     const button = container.createEl("button", {
       cls: "crm-pipeline-toolbar-button",
       attr: { "aria-label": label, title: label },
     });
     setIcon(button, icon);
     button.createSpan({ text: label });
-    button.addEventListener("click", async () => {
-      await onClick();
-      this.render();
+    button.addEventListener("click", () => {
+      void Promise.resolve(onClick()).then(() => this.render());
     });
   }
 
@@ -397,20 +398,20 @@ export class CrmView extends TextFileView {
       card.toggleClass("is-drop-after", !before);
     });
     card.addEventListener("dragleave", () => card.removeClasses(["is-drop-before", "is-drop-after"]));
-    card.addEventListener("drop", async (event) => {
+    card.addEventListener("drop", (event) => {
       card.removeClasses(["is-drop-before", "is-drop-after"]);
       const path = event.dataTransfer?.getData("application/x-crm-card") || "";
       if (!path) {
         return;
       }
       const next = card.nextElementSibling instanceof HTMLElement ? card.nextElementSibling.dataset.cardId ?? null : null;
-      await this.onCardDrop(event, stage, path, dropsBefore(card, event) ? cardId(record) : next);
+      void this.onCardDrop(event, stage, path, dropsBefore(card, event) ? cardId(record) : next);
     });
-    card.addEventListener("click", async (event) => {
+    card.addEventListener("click", (event) => {
       if (event.target instanceof HTMLSelectElement || event.target instanceof HTMLButtonElement) {
         return;
       }
-      await this.openRecord(record);
+      void this.openRecord(record);
     });
 
     const company = cleanLink(stringField(record, "company"));
@@ -424,7 +425,7 @@ export class CrmView extends TextFileView {
     titleRow.createEl("strong", { text: record.name, cls: "crm-pipeline-card-title" });
     const actions = titleRow.createDiv({ cls: "crm-pipeline-card-actions" });
     const interactionButton = actions.createEl("button", {
-      cls: "crm-pipeline-card-action crm-pipeline-interaction-button",
+      cls: "clickable-icon crm-pipeline-card-action crm-pipeline-interaction-button",
       attr: { "aria-label": "Log interaction", title: "Log interaction" },
     });
     setIcon(interactionButton, "message-square-plus");
@@ -433,7 +434,7 @@ export class CrmView extends TextFileView {
       this.actions.logInteraction(record, () => this.scheduleRender());
     });
     const cardMenuButton = actions.createEl("button", {
-      cls: "crm-pipeline-card-action",
+      cls: "clickable-icon crm-pipeline-card-action",
       attr: { "aria-label": "Card options", title: "Card options" },
     });
     setIcon(cardMenuButton, "more-vertical");
@@ -442,8 +443,8 @@ export class CrmView extends TextFileView {
       this.openCardMenu(event, record);
     });
 
-    this.renderCardRow(card, "building-2", company, company ? () => this.openRelatedRecord("crm/company", company) : undefined);
-    this.renderCardRow(card, "user", contact, contact ? () => this.openRelatedRecord("crm/person", contact) : undefined);
+    this.renderCardRow(card, "building-2", company, company ? () => void this.openRelatedRecord("crm/company", company) : undefined);
+    this.renderCardRow(card, "user", contact, contact ? () => void this.openRelatedRecord("crm/person", contact) : undefined);
     this.renderCardRow(card, "circle-dollar-sign", value ? formatMoney(value, this.settings.defaultCurrency, resolveLocale(this.settings)) : "");
     this.renderCardRow(card, "activity", nextAction);
     this.renderCardRow(card, "calendar-days", formatDate(nextActionDate, resolveLocale(this.settings)));
@@ -520,9 +521,9 @@ export class CrmView extends TextFileView {
     }
 
     // Fall back to the cache (file already indexed).
-    const frontmatter = this.file ? this.app.metadataCache.getFileCache(this.file)?.frontmatter : null;
+    const frontmatter: Frontmatter | undefined = this.file ? this.app.metadataCache.getFileCache(this.file)?.frontmatter : undefined;
     const value = frontmatter?.[key];
-    return Array.isArray(value) ? value.map((item) => String(item).trim()).filter(Boolean) : null;
+    return Array.isArray(value) ? listValue(value) : null;
   }
 
   private pipelineStages(): string[] {
@@ -639,11 +640,11 @@ export class CrmView extends TextFileView {
           continue;
         }
         try {
-          await this.fileManager.processFrontMatter(file, (frontmatter) => {
+          await this.fileManager.processFrontMatter(file, (frontmatter: Frontmatter) => {
             frontmatter.stage = nextStage;
           });
           this.recordStageOverrides.set(record.path, nextStage);
-        } catch (_error) {
+        } catch {
           failed.push(record.name);
         }
       }
@@ -735,7 +736,7 @@ export class CrmView extends TextFileView {
       return;
     }
 
-    await this.fileManager.processFrontMatter(file, (frontmatter) => {
+    await this.fileManager.processFrontMatter(file, (frontmatter: Frontmatter) => {
       frontmatter.stage = normalizeStage(stage);
     });
     this.recordStageOverrides.set(record.path, normalizeStage(stage));
@@ -773,7 +774,7 @@ class PipelineStageModal extends Modal {
     new Setting(contentEl)
       .setName("Stage name")
       .addText((text) => {
-        text.setPlaceholder("e.g. Qualified");
+        text.setPlaceholder("For example: Qualified");
         text.setValue(this.initialValue);
         text.onChange((value) => {
           this.value = value;
@@ -850,21 +851,7 @@ function stageLabel(stage: string): string {
 }
 
 function stringField(record: CrmRecord, field: string): string {
-  const value = record.frontmatter[field];
-  if (typeof value === "string") {
-    return value.trim();
-  }
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
-  }
-  if (typeof value === "number") {
-    return String(value);
-  }
-  return "";
-}
-
-function cleanLink(value: string): string {
-  return value.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+  return textValue(record.frontmatter[field]);
 }
 
 // Stable identity of a card in the manual order: crm_id, which survives renames.
