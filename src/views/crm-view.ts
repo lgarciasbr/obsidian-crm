@@ -3,6 +3,7 @@ import { CrmSettings, normalizeFolderPath, resolveLocale } from "../settings";
 import { ensureCrmFolders } from "../crm/folders";
 import { CrmRecord, CrmRepository } from "../crm/repository";
 import { DEFAULT_STAGES } from "../crm/integrity";
+import { safeExternalUrl } from "../crm/urls";
 import { addStage, formatDate, formatMoney, frontmatterList, moveStage, normalizeStage, pruneCardOrder, removeStage, renameStage, reorderCard, sortCards } from "../crm/pipeline";
 
 export const CRM_VIEW_TYPE = "crm-view";
@@ -298,9 +299,12 @@ export class CrmView extends TextFileView {
     const details = [contact.site, contact.industry].filter(Boolean);
     if (details.length) {
       const secondary = item.createDiv({ cls: "crm-list-item-secondary" });
-      if (contact.site) {
+      const siteUrl = safeExternalUrl(contact.site);
+      if (contact.site && siteUrl) {
         const site = secondary.createSpan({ text: contact.site, cls: "crm-link" });
-        site.addEventListener("click", () => window.open(contact.site, "_blank"));
+        site.addEventListener("click", () => window.open(siteUrl, "_blank", "noopener"));
+      } else if (contact.site) {
+        secondary.createSpan({ text: contact.site });
       }
       if (contact.industry) {
         secondary.createSpan({ text: contact.industry });

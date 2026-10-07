@@ -147,9 +147,15 @@ export class FakeFileManager {
   }
 }
 
+// Mirrors Obsidian's normalizePath: forward slashes, no duplicate or edge slashes.
+export function normalizePath(path: string): string {
+  const clean = path.replace(/\\/g, "/").replace(/\/+/g, "/").replace(/^\/|\/$/g, "").normalize("NFC");
+  return clean || "/";
+}
+
 export const fakeWorkspace = { getLeaf: () => ({ openFile: async () => undefined }) };
 
-const fakeModule = new Proxy({ TAbstractFile, TFolder, TFile, Notice } as Record<string, unknown>, {
+const fakeModule = new Proxy({ TAbstractFile, TFolder, TFile, Notice, normalizePath } as Record<string, unknown>, {
   get(target, key: string) {
     if (key in target) return target[key];
     if (key === "debounce") return (fn: unknown) => fn;

@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, normalizePath, PluginSettingTab, Setting } from "obsidian";
 import CrmPlugin from "../main";
 
 export interface CrmSettings {
@@ -30,11 +30,15 @@ export function resolveLocale(settings: CrmSettings): string {
   }
 }
 
+// The CRM folder, relative to the vault root. Paths that are empty or that
+// try to leave the vault ("..") fall back to the default folder.
 export function normalizeFolderPath(path: string): string {
-  return path
-    .trim()
-    .replace(/^\/+/, "")
-    .replace(/\/+$/, "") || DEFAULT_SETTINGS.crmRoot;
+  const clean = normalizePath(path.trim().replace(/\\/g, "/")).replace(/^\/+|\/+$/g, "");
+  const segments = clean.split("/");
+  if (!clean || segments.some((segment) => segment === ".." || segment === ".")) {
+    return DEFAULT_SETTINGS.crmRoot;
+  }
+  return clean;
 }
 
 export class CrmSettingTab extends PluginSettingTab {
