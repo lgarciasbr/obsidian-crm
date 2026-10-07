@@ -7,7 +7,7 @@ taken from its section below.
 
 ## [Unreleased]
 
-## [0.3.0] - Pending release
+## [0.3.0] - 2026-10-07
 
 ### Added
 - Card menu: **Move up**, **Move down** and **Move to <stage>**, so cards can be organized on touch screens and with the keyboard.
@@ -60,6 +60,6 @@ First release for beta testers (BRAT).
 Initial MVP: people, companies, opportunities and interactions as Markdown notes; follow-up tasks; a Kanban-style opportunity pipeline; data validation.
 
 [Unreleased]: https://github.com/lgarciasbr/obsidian-crm/compare/0.3.0...HEAD
-[0.3.0]: https://github.com/lgarciasbr/obsidian-crm/compare/0.2.0...HEAD
+[0.3.0]: https://github.com/lgarciasbr/obsidian-crm/releases/tag/0.3.0
 [0.2.0]: https://github.com/lgarciasbr/obsidian-crm/releases/tag/0.2.0
 [0.1.0]: https://github.com/lgarciasbr/obsidian-crm/commit/cac0f94

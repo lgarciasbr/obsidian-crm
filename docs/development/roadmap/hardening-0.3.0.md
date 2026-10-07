@@ -9,6 +9,10 @@
 5. **CI and dependencies** (`b405a76`): read-only CI permissions, weekly Dependabot, changelog-derived release notes and release metadata tests. Dependabot PRs require individual review; successful checks do not imply automatic merge.
 6. **Open source documentation** (`ae15133`): user-focused README without images or replacement screenshots; changelog; SECURITY, CONTRIBUTING, Contributor Covenant; issue/PR templates; package metadata and author URL; internal docs moved to docs/development with context; data contract kept public; desktop/mobile manual test script. GitHub private vulnerability reporting enabled and verified.
 
+## Release authorization
+
+On 2026-10-07 the Navigator explicitly authorized publishing 0.3.0 for BRAT. The candidate had been installed in both local vaults with backups. No completed desktop/mobile manual checklist was reported in the conversation; authorization to release is not evidence that those checks passed. Windows/mobile beta feedback remains outstanding.
+
 ## Release gate (phase 7)
 
 - Candidate version: **0.3.0**; minimum Obsidian version: **1.6.6**, required by FileManager.trashFile.
