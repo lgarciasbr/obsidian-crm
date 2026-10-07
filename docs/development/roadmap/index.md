@@ -22,7 +22,7 @@ Rules:
 | DS-002 | Data foundation for CRM entities | The plugin can create and read people, companies, and opportunities as Markdown/frontmatter records. | 🟩 Done |
 | DS-003 | Interaction loop and follow-up | The plugin can log interactions, update related records when possible, and create Markdown follow-up tasks. | 🟩 Done |
 | DS-004 | Value surfaces | The plugin exposes the Opportunity Pipeline as the primary visual surface (Attention Dashboard was built, then rejected and removed). | 🟩 Done |
-| DS-005 | Community-ready hardening | The plugin is documented, privacy-safe, manually installable, tested where practical, and ready for release review. | ⚪ Backlog |
+| DS-005 | Community-ready hardening | The plugin is documented, privacy-safe, manually installable, tested where practical, and ready for release review. | 🟨 Implementation complete; manual validation pending |
 
 ## Story Index
 
@@ -58,6 +58,10 @@ Everything above was closed by Navigator decision as the v0.1 baseline. New work
 
 - TD-001 (deferred debt): next action comes only from opportunity frontmatter.
 - TS-014 and TS-017 were closed without manual Navigator validation.
+
+## Hardening — 0.3.0 candidate
+
+See [the audit remediation record](hardening-0.3.0.md) for implemented phases, automated checks, deliberate exclusions and release gates. No tag or release is authorized before Navigator validation.
 
 ## v0.1 Non-goals
 

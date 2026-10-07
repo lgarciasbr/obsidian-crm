@@ -4,7 +4,7 @@
 
 Please **do not open a public issue** for security problems.
 
-Report them privately through GitHub: go to the repository's **Security** tab and choose **Report a vulnerability** (or open [this link](https://github.com/lgarciasbr/obsidian-crm/security/advisories/new)). Only the maintainer can see the report. You can expect a first answer within a week; once a fix is released, the advisory is published with credit to you, unless you prefer otherwise.
+Report them privately through GitHub: go to the repository's **Security** tab and choose **Report a vulnerability** (or open [this link](https://github.com/lgarciasbr/obsidian-crm/security/advisories/new)). The report is private to authorized repository maintainers and advisory collaborators, not public. You can expect a first answer within a week; once a fix is released, the advisory is published with credit to you, unless you prefer otherwise.
 
 ## Supported versions
 

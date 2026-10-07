@@ -7,12 +7,16 @@ taken from its section below.
 
 ## [Unreleased]
 
+## [0.3.0] - Pending release
+
 ### Added
 - Card menu: **Move up**, **Move down** and **Move to <stage>**, so cards can be organized on touch screens and with the keyboard.
 - Phone layout: stacked form fields, full-width list search, and one board column per screen with swipe snapping.
 - Enter submits the create, edit and stage forms.
 
 ### Changed
+- Requires Obsidian **1.6.6 or later**, the first version supporting the API that respects your trash setting.
+- Public documentation, contribution templates and private vulnerability reporting are now available. The README has no images.
 - Deleting an opportunity also removes its links from the company and contact notes and its place in the board order, and respects your trash setting.
 - The plugin only reads the CRM folder instead of scanning the whole vault, which is faster in large vaults.
 - Changing the CRM folder closes open CRM views (reopen them with **CRM: Open**).
@@ -55,6 +59,7 @@ First release for beta testers (BRAT).
 
 Initial MVP: people, companies, opportunities and interactions as Markdown notes; follow-up tasks; a Kanban-style opportunity pipeline; data validation.
 
-[Unreleased]: https://github.com/lgarciasbr/obsidian-crm/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/lgarciasbr/obsidian-crm/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/lgarciasbr/obsidian-crm/compare/0.2.0...HEAD
 [0.2.0]: https://github.com/lgarciasbr/obsidian-crm/releases/tag/0.2.0
 [0.1.0]: https://github.com/lgarciasbr/obsidian-crm/commit/cac0f94

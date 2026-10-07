@@ -15,6 +15,13 @@ test("manifest, package and versions.json agree on the release version", () => {
   assert.equal(read("versions.json")[manifest.version], manifest.minAppVersion);
 });
 
+test("the minimum Obsidian version supports FileManager.trashFile", () => {
+  const actual = read("manifest.json").minAppVersion.split(".").map(Number);
+  const required = [1, 6, 6];
+  const different = actual.findIndex((value: number, index: number) => value !== required[index]);
+  assert.ok(different === -1 || actual[different] > required[different], "trashFile requires Obsidian 1.6.6 or later");
+});
+
 test("the manifest satisfies the community directory rules", () => {
   const manifest = read("manifest.json");
   assert.doesNotMatch(manifest.id, /obsidian/i);
