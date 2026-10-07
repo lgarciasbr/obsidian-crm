@@ -20,3 +20,11 @@ test("the manifest satisfies the community directory rules", () => {
   assert.doesNotMatch(manifest.id, /obsidian/i);
   assert.doesNotMatch(manifest.description, /obsidian/i);
 });
+
+test("the changelog has notes for the manifest version", () => {
+  const { version } = read("manifest.json");
+  const changelog = readFileSync(join(root, "CHANGELOG.md"), "utf8");
+  const section = changelog.split(/^## /m).find((part) => part.startsWith(`[${version}]`));
+  assert.ok(section, `CHANGELOG.md needs a "## [${version}]" section`);
+  assert.ok(section.split("\n").slice(1).join("\n").trim().length > 0, "the section must not be empty");
+});

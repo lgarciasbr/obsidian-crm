@@ -1,0 +1,16 @@
+# Weekly update PRs for build/test dependencies and GitHub Actions. CI must
+# pass before merging; nothing here is bundled into main.js except what the
+# build pulls from src/.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
