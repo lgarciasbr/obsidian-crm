@@ -16,7 +16,9 @@ function setup() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const interactions = new InteractionCreator(vault as any, fakeWorkspace as any, cache as any, fileManager as any, settings, entities);
   const fm = (path: string) => parseFrontmatter(vault.content(path));
-  return { vault, cache, entities, interactions, fm };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const any = (x: unknown) => x as any;
+  return { vault, cache, entities, interactions, fm, any };
 }
 
 const form = (values: Record<string, string>) => values as EntityFormResult;
@@ -123,4 +125,38 @@ test("editing an opportunity to a new company moves every reference", async () =
   assert.doesNotMatch(vault.content("CRM/Companies/Acme.md"), /Deal/);
   assert.match(vault.content("CRM/Companies/Globex.md"), /## Opportunities\n\n- \[\[Globex - Deal\]\]/);
   assert.match(vault.content("CRM/People/Jane.md"), /## Opportunities\n\n- \[\[Globex - Deal\]\]\n\n## History/);
+});
+
+test("deleting an opportunity removes its links and its place in the board order", async () => {
+  const { vault, cache, entities, fm } = setup();
+  await entities.createOpportunity(form({ name: "Deal", company_new: "Acme", contact_new: "Jane", stage: "lead" }), false);
+  cache.indexAll();
+  await entities.createOpportunity(form({ name: "Other", company: "Acme", stage: "lead" }), false);
+  cache.indexAll();
+  const pipeline = vault.files.get("CRM/Pipeline.md")!;
+  pipeline.content = pipeline.content.replace("---\n\n# Pipeline", "card_order:\n  - opportunity-acme-deal\n  - opportunity-acme-other\n---\n\n# Pipeline");
+
+  const deal = vault.files.get("CRM/Opportunities/Acme - Deal.md")!.file;
+  await entities.deleteOpportunity(deal as never);
+
+  assert.equal(vault.files.has("CRM/Opportunities/Acme - Deal.md"), false);
+  assert.deepEqual(vault.trashed, ["CRM/Opportunities/Acme - Deal.md"]);
+  assert.doesNotMatch(vault.content("CRM/Companies/Acme.md"), /Acme - Deal/);
+  assert.match(vault.content("CRM/Companies/Acme.md"), /- \[\[Acme - Other\]\]/);
+  assert.doesNotMatch(vault.content("CRM/People/Jane.md"), /Acme - Deal/);
+  assert.deepEqual(fm("CRM/Pipeline.md").card_order, ["opportunity-acme-other"]);
+});
+
+test("listing records walks only the CRM folder, not the whole vault", async () => {
+  const { vault, cache, entities, any } = setup();
+  await entities.createCompany(form({ name: "Acme" }), false);
+  await vault.create("Elsewhere/Company look-alike.md", '---\ntype: "crm/company"\nname: "Fake"\n---\n');
+  cache.indexAll();
+  vault.getMarkdownFiles = () => {
+    throw new Error("the whole vault must not be scanned");
+  };
+
+  const { CrmRepository } = await import("../src/crm/repository");
+  const names = new CrmRepository(any(vault), any(cache), { ...DEFAULT_SETTINGS }).listRecords("crm/company").map((r) => r.name);
+  assert.deepEqual(names, ["Acme"]);
 });

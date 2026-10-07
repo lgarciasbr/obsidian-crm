@@ -36,15 +36,23 @@ export default class CrmPlugin extends Plugin {
         this.repository(),
         this.app.fileManager,
         this.settings,
-        (stage, onCreated) => this.openCreateOpportunityModal(stage, false, onCreated),
-        (record, onCreated) => this.openLogInteractionModal({
-          opportunity: record.basename,
-          company: this.cleanLink(String(record.frontmatter.company || "")),
-          person: this.cleanLink(String(record.frontmatter.contact || "")),
-        }, onCreated, true),
-        (record, onEdited) => this.openEditOpportunityModal(record, onEdited),
-        () => this.openCreatePersonModal(true),
-        () => this.openCreateCompanyModal(true)
+        {
+          addOpportunity: (stage, onCreated) => this.openCreateOpportunityModal(stage, false, onCreated),
+          logInteraction: (record, onCreated) => this.openLogInteractionModal({
+            opportunity: record.basename,
+            company: this.cleanLink(String(record.frontmatter.company || "")),
+            person: this.cleanLink(String(record.frontmatter.contact || "")),
+          }, onCreated, true),
+          editOpportunity: (record, onEdited) => this.openEditOpportunityModal(record, onEdited),
+          deleteOpportunity: async (record) => {
+            const file = this.app.vault.getAbstractFileByPath(record.path);
+            if (file instanceof TFile) {
+              await this.entityCreator().deleteOpportunity(file);
+            }
+          },
+          addPerson: () => this.openCreatePersonModal(true),
+          addCompany: () => this.openCreateCompanyModal(true),
+        }
       )
     );
 
@@ -160,6 +168,11 @@ export default class CrmPlugin extends Plugin {
       ? `CRM validated: ${report.total} records, no violations.`
       : `CRM validated: ${report.records.length} record(s) with issues. See the report.`);
     await this.app.workspace.getLeaf("tab").openFile(file);
+  }
+
+  onCrmRootChanged(): void {
+    this.app.workspace.detachLeavesOfType(CRM_VIEW_TYPE);
+    new Notice(`CRM folder is now "${normalizeFolderPath(this.settings.crmRoot)}". Run "CRM: Open" to see it.`);
   }
 
   async loadSettings(): Promise<void> {

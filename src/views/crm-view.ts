@@ -19,6 +19,16 @@ export async function ensurePipelineFile(vault: Vault, settings: CrmSettings): P
 
 type CrmTab = "pipeline" | "companies" | "contacts";
 
+// What the view asks the plugin to do; the plugin owns modals and writes.
+export interface CrmViewActions {
+  addOpportunity(stage: string, onCreated?: () => void): void;
+  logInteraction(record: CrmRecord, onCreated?: () => void): void;
+  editOpportunity(record: CrmRecord, onEdited?: () => void): void;
+  deleteOpportunity(record: CrmRecord): Promise<void>;
+  addPerson(): Promise<void> | void;
+  addCompany(): Promise<void> | void;
+}
+
 export class CrmView extends TextFileView {
   private dataValue = "";
   private stagesOverride: string[] | null = null;
@@ -34,11 +44,7 @@ export class CrmView extends TextFileView {
     private repository: CrmRepository,
     private fileManager: FileManager,
     private settings: CrmSettings,
-    private onAddOpportunity: (stage: string, onCreated?: () => void) => void,
-    private onLogInteraction: (record: CrmRecord, onCreated?: () => void) => void,
-    private onEditOpportunity: (record: CrmRecord, onEdited?: () => void) => void,
-    private onAddPerson: () => Promise<void> | void,
-    private onAddCompany: () => Promise<void> | void
+    private actions: CrmViewActions
   ) {
     super(leaf);
   }
@@ -166,12 +172,12 @@ export class CrmView extends TextFileView {
       addButton.setAttr("role", "button");
       addButton.setAttr("tabindex", "0");
       addButton.addEventListener("click", async () => {
-        this.onAddOpportunity(stage, () => this.render());
+        this.actions.addOpportunity(stage, () => this.render());
       });
       addButton.addEventListener("keydown", async (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          this.onAddOpportunity(stage, () => this.render());
+          this.actions.addOpportunity(stage, () => this.render());
         }
       });
     }
@@ -232,7 +238,7 @@ export class CrmView extends TextFileView {
       localActions,
       kind === "person" ? "user" : "building-2",
       kind === "person" ? "New contact" : "New company",
-      kind === "person" ? this.onAddPerson : this.onAddCompany
+      kind === "person" ? () => this.actions.addPerson() : () => this.actions.addCompany()
     );
 
     const table = content.createDiv({ cls: "crm-contacts-table" });
@@ -424,7 +430,7 @@ export class CrmView extends TextFileView {
     setIcon(interactionButton, "message-square-plus");
     interactionButton.addEventListener("click", (event) => {
       event.stopPropagation();
-      this.onLogInteraction(record, () => this.scheduleRender());
+      this.actions.logInteraction(record, () => this.scheduleRender());
     });
     const cardMenuButton = actions.createEl("button", {
       cls: "crm-pipeline-card-action",
@@ -450,7 +456,7 @@ export class CrmView extends TextFileView {
       item
         .setTitle("Edit")
         .setIcon("pencil")
-        .onClick(() => this.onEditOpportunity(record, () => this.scheduleRender()))
+        .onClick(() => this.actions.editOpportunity(record, () => this.scheduleRender()))
     );
     menu.addItem((item) =>
       item
@@ -467,12 +473,10 @@ export class CrmView extends TextFileView {
       "Delete opportunity",
       `Delete "${record.name}"? The file will be moved to the trash.`,
       async () => {
-        const file = this.app.vault.getAbstractFileByPath(record.path);
-        if (file instanceof TFile) {
-          await this.app.vault.trash(file, true);
-          new Notice(`Deleted: ${record.name}`);
-          this.scheduleRender();
-        }
+        await this.actions.deleteOpportunity(record);
+        this.cardOrderOverride = this.cardOrderOverride?.filter((id) => id !== cardId(record)) ?? null;
+        new Notice(`Deleted: ${record.name}`);
+        this.scheduleRender();
       }
     ).open();
   }
@@ -823,7 +827,13 @@ class ConfirmModal extends Modal {
           .setButtonText("Delete")
           .setWarning()
           .onClick(async () => {
-            await this.onConfirm();
+            button.setDisabled(true);
+            try {
+              await this.onConfirm();
+            } catch (error) {
+              console.error("CRM: could not delete", error);
+              new Notice(`Could not delete: ${error instanceof Error ? error.message : String(error)}`);
+            }
             this.close();
           })
       );

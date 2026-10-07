@@ -1,8 +1,10 @@
-import { App, Modal, Notice, Setting } from "obsidian";
+import { App, ButtonComponent, Modal, Notice, Setting } from "obsidian";
 import { EntityField, EntityFormResult } from "../crm/types";
 
 export class EntityModal extends Modal {
   private values: EntityFormResult = {};
+  private submitting = false;
+  private submitButton: ButtonComponent | null = null;
 
   constructor(
     app: App,
@@ -40,21 +42,48 @@ export class EntityModal extends Modal {
     }
 
     new Setting(contentEl)
-      .addButton((button) =>
+      .addButton((button) => {
+        this.submitButton = button;
         button
           .setButtonText(this.submitLabel)
           .setCta()
-          .onClick(async () => {
-            const missing = this.fields.find((field) => field.required && !this.valueFor(field).trim());
-            if (missing) {
-              new Notice(`${missing.label} is required.`);
-              return;
-            }
+          .onClick(() => this.submit());
+      });
 
-            await this.onSubmit(this.values);
-            this.close();
-          })
-      );
+    this.scope.register([], "Enter", (event) => {
+      if (event.target instanceof HTMLTextAreaElement) {
+        return true;
+      }
+      event.preventDefault();
+      void this.submit();
+      return false;
+    });
+  }
+
+  // Validates, saves once (a second click while saving is ignored) and keeps
+  // the modal open with a notice if saving fails, so nothing is lost silently.
+  private async submit(): Promise<void> {
+    if (this.submitting) {
+      return;
+    }
+    const missing = this.fields.find((field) => field.required && !this.valueFor(field).trim());
+    if (missing) {
+      new Notice(`${missing.label} is required.`);
+      return;
+    }
+
+    this.submitting = true;
+    this.submitButton?.setDisabled(true);
+    try {
+      await this.onSubmit(this.values);
+      this.close();
+    } catch (error) {
+      console.error("CRM: could not save", error);
+      new Notice(`Could not save: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      this.submitting = false;
+      this.submitButton?.setDisabled(false);
+    }
   }
 
   onClose(): void {

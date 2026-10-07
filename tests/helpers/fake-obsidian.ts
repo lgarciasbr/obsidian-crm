@@ -7,9 +7,34 @@ export class TAbstractFile {
   constructor(public path: string) {}
 }
 
-export class TFolder extends TAbstractFile {}
+export class TFolder extends TAbstractFile {
+  constructor(path: string, private vault?: FakeVault) {
+    super(path);
+  }
+  // Direct children, derived from the files and folders the fake vault knows.
+  get children(): TAbstractFile[] {
+    if (!this.vault) return [];
+    const prefix = `${this.path}/`;
+    const childFolders = new Set<string>();
+    const files: TAbstractFile[] = [];
+    for (const { file } of this.vault.files.values()) {
+      if (!file.path.startsWith(prefix)) continue;
+      const rest = file.path.slice(prefix.length);
+      if (rest.includes("/")) childFolders.add(prefix + rest.split("/")[0]);
+      else files.push(file);
+    }
+    for (const folder of this.vault.folders) {
+      const rest = folder.startsWith(prefix) ? folder.slice(prefix.length) : "";
+      if (rest && !rest.includes("/")) childFolders.add(folder);
+    }
+    return [...[...childFolders].map((path) => new TFolder(path, this.vault)), ...files];
+  }
+}
 
 export class TFile extends TAbstractFile {
+  get extension(): string {
+    return this.path.split(".").pop() ?? "";
+  }
   get basename(): string {
     return this.path.split("/").pop()!.replace(/\.md$/, "");
   }
@@ -72,6 +97,7 @@ function serialize(fm: Frontmatter): string {
 export class FakeVault {
   files = new Map<string, { file: TFile; content: string }>();
   folders = new Set<string>();
+  trashed: string[] = [];
 
   async create(path: string, content: string): Promise<TFile> {
     if (this.files.has(path)) throw new Error(`File already exists: ${path}`);
@@ -95,7 +121,8 @@ export class FakeVault {
   }
   getAbstractFileByPath(path: string): TAbstractFile | null {
     if (this.files.has(path)) return this.files.get(path)!.file;
-    return this.folders.has(path) ? new TFolder(path) : null;
+    const isFolder = this.folders.has(path) || [...this.files.keys()].some((file) => file.startsWith(`${path}/`));
+    return isFolder ? new TFolder(path, this) : null;
   }
   getMarkdownFiles(): TFile[] {
     return [...this.files.values()].map((entry) => entry.file);
@@ -131,6 +158,11 @@ export class FakeFileManager {
     fn(fm);
     const body = content.replace(/^---\n[\s\S]*?\n---\n?/, "");
     await this.vault.modify(file, `---\n${serialize(fm)}\n---\n${body}`);
+  }
+
+  async trashFile(file: TFile): Promise<void> {
+    this.vault.files.delete(file.path);
+    this.vault.trashed.push(file.path);
   }
 
   // Mirrors Obsidian with "Automatically update internal links" enabled.

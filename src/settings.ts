@@ -43,6 +43,7 @@ export function normalizeFolderPath(path: string): string {
 
 export class CrmSettingTab extends PluginSettingTab {
   plugin: CrmPlugin;
+  private rootWhenOpened = "";
 
   constructor(app: App, plugin: CrmPlugin) {
     super(app, plugin);
@@ -52,6 +53,7 @@ export class CrmSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    this.rootWhenOpened = this.plugin.settings.crmRoot;
 
     new Setting(containerEl)
       .setName("Root folder")
@@ -116,5 +118,13 @@ export class CrmSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+  }
+
+  // The root is saved on every keystroke, so open CRM views are only reset
+  // once the settings are closed with a different folder.
+  hide(): void {
+    if (this.plugin.settings.crmRoot !== this.rootWhenOpened) {
+      this.plugin.onCrmRootChanged();
+    }
   }
 }

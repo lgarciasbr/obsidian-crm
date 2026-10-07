@@ -1,4 +1,4 @@
-import { MetadataCache, TFile, Vault } from "obsidian";
+import { MetadataCache, TFile, TFolder, Vault } from "obsidian";
 import { CrmSettings, normalizeFolderPath } from "../settings";
 
 export type CrmRecordType = "crm/person" | "crm/company" | "crm/opportunity" | "crm/interaction";
@@ -26,10 +26,14 @@ export class CrmRepository {
   ) {}
 
   listRecords(type?: CrmRecordType): CrmRecord[] {
-    const root = normalizeFolderPath(this.settings.crmRoot);
+    // Walk only the CRM folder: vaults can hold tens of thousands of files.
+    const root = this.vault.getAbstractFileByPath(normalizeFolderPath(this.settings.crmRoot));
+    const files: TFile[] = [];
+    if (root instanceof TFolder) {
+      collectMarkdownFiles(root, files);
+    }
 
-    return this.vault.getMarkdownFiles()
-      .filter((file) => file.path.startsWith(`${root}/`))
+    return files
       .map((file) => this.recordFromFile(file))
       .filter((record): record is CrmRecord => record !== null)
       .filter((record) => !type || record.type === type);
@@ -87,4 +91,14 @@ export class CrmRepository {
 
 function normalizeName(name: string | undefined): string {
   return (name || "").trim().toLowerCase();
+}
+
+function collectMarkdownFiles(folder: TFolder, out: TFile[]): void {
+  for (const child of folder.children) {
+    if (child instanceof TFolder) {
+      collectMarkdownFiles(child, out);
+    } else if (child instanceof TFile && child.extension === "md") {
+      out.push(child);
+    }
+  }
 }

@@ -105,6 +105,30 @@ export class EntityCreator {
     return renamed;
   }
 
+  // Moves an opportunity to the trash (honouring the user's trash setting)
+  // after removing every reference to it: the company's and contact's
+  // Opportunities sections and its place in the board's card_order.
+  async deleteOpportunity(file: TFile): Promise<void> {
+    const fm = this.metadataCache.getFileCache(file)?.frontmatter ?? {};
+    for (const linked of [this.findLinked(String(fm.company ?? ""), file), this.findLinked(String(fm.contact ?? ""), file)]) {
+      if (linked) {
+        await removeLinkFromSection(this.vault, linked.file, "Opportunities", linkTo(file));
+      }
+    }
+
+    const id = String(fm.crm_id ?? "");
+    const pipeline = this.vault.getAbstractFileByPath(`${normalizeFolderPath(this.settings.crmRoot)}/Pipeline.md`);
+    if (id && pipeline instanceof TFile) {
+      await this.fileManager.processFrontMatter(pipeline, (pipelineFm) => {
+        if (Array.isArray(pipelineFm.card_order)) {
+          pipelineFm.card_order = pipelineFm.card_order.filter((item: unknown) => item !== id);
+        }
+      });
+    }
+
+    await this.fileManager.trashFile(file);
+  }
+
   // Returns the company chosen in the form, creating it when the user typed a
   // new name. Null when nothing was chosen or the name does not resolve.
   async resolveCompany(values: EntityFormResult, key: string): Promise<EntityRef | null> {
