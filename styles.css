@@ -78,10 +78,6 @@
   font-weight: 700;
 }
 
-.crm-navigation .crm-pipeline-toolbar-actions {
-  transform: translateY(-4px);
-}
-
 .crm-contacts {
   height: calc(100% - 3.5rem);
   overflow: auto;
@@ -106,12 +102,6 @@
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0;
-}
-
-.crm-contacts-open {
-  cursor: pointer;
-  font-size: 0.82rem;
-  padding: 0.25rem 0.55rem;
 }
 
 .crm-contacts-search {
@@ -176,12 +166,6 @@
   padding: 1rem;
 }
 
-.crm-pipeline-view {
-  height: 100%;
-  overflow: hidden;
-  padding: 0.75rem 1rem;
-}
-
 .crm-pipeline-toolbar {
   align-items: center;
   display: flex;
@@ -191,15 +175,6 @@
 
 .crm-pipeline-toolbar h2 {
   margin: 0;
-}
-
-.crm-pipeline-toolbar-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.crm-pipeline-toolbar-actions:empty {
-  display: none;
 }
 
 .crm-pipeline-toolbar-button {
@@ -467,8 +442,7 @@
   text-decoration: underline;
 }
 
-.crm-pipeline-card-icon,
-.crm-pipeline-card-muted {
+.crm-pipeline-card-icon {
   color: var(--text-muted);
 }
 

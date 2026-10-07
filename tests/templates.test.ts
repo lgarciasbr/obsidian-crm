@@ -75,3 +75,20 @@ test("frontmatter values are read defensively", async () => {
   assert.deepEqual(listValue(["a", 2, { x: 1 }, ""]), ["a", "2"]);
   assert.deepEqual(listValue("not a list"), []);
 });
+
+test("company rows count the people and opportunities linked to them", async () => {
+  const { contactViewModels } = await import("../src/views/contact-list");
+  const record = (type: string, name: string, frontmatter: Record<string, unknown> = {}) =>
+    ({ type, name, basename: name, path: `${name}.md`, frontmatter }) as never;
+  const rows = contactViewModels(
+    [record("crm/person", "Jane", { company: "[[Acme]]", email: "jane@acme.example" }), record("crm/person", "Bob")],
+    [record("crm/company", "Acme", { site: "acme.example" }), record("crm/company", "Globex")],
+    [record("crm/opportunity", "Deal", { company: "[[Acme]]" }), record("crm/opportunity", "Other", { company: "[[Acme|A]]" })]
+  );
+  const acme = rows.find((row) => row.name === "Acme")!;
+  assert.equal(acme.peopleCount, 1);
+  assert.equal(acme.opportunityCount, 2);
+  assert.equal(rows.find((row) => row.name === "Globex")!.opportunityCount, 0);
+  assert.equal(rows.find((row) => row.name === "Jane")!.company, "Acme");
+  assert.deepEqual(rows.map((row) => row.name), ["Acme", "Bob", "Globex", "Jane"]);
+});
