@@ -79,6 +79,13 @@ export function opportunityTitle(companyLabel: string, name: string): string {
   return `${companyLabel} - ${name}`;
 }
 
+// The inverse of opportunityTitle: the name part of a file name, or the whole
+// file name when it does not start with the company.
+export function opportunityNameFromTitle(title: string, companyLabel: string): string {
+  const prefix = companyLabel ? opportunityTitle(companyLabel, "") : "";
+  return (prefix && title.startsWith(prefix) ? title.slice(prefix.length) : title).trim();
+}
+
 export function opportunityNote(fields: OpportunityFields): string {
   const name = fields.name.trim();
   const title = opportunityTitle(fields.companyLabel, name);

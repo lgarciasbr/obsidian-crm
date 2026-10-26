@@ -78,6 +78,9 @@ opportunities are pruned the next time the order is saved.
 - `stage` ∈ configured pipeline stages (default:
   `lead, conversation, proposal, negotiation, won, lost, paused`)
 - `value` (numeric string or empty), `created` (ISO date), `notes` (free text)
+- `name` is the title shown on the pipeline card and follows the file name
+  (`Company - Name`): renaming the note in Obsidian updates `name`. `notes` is
+  the short text shown on the card; body sections are not shown on it.
 
 ### crm/interaction
 - `date` (ISO date, required)

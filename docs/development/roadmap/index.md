@@ -51,6 +51,7 @@ Rules:
 | TS-021 | Commands, settings and test coverage review | — (post-baseline) | 🟩 Done |
 | TS-022 | Agent guide in the CRM folder | — (post-baseline) | 🟩 Done |
 | TS-023 | Manual card order in the pipeline | — (post-baseline) | 🟩 Done |
+| TS-024 | Opportunity name follows the file name | — (post-baseline) | 🟩 Done |
 
 ## Baseline — 2026-10-05
 

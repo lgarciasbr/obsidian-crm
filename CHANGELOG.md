@@ -7,6 +7,12 @@ taken from its section below.
 
 ## [Unreleased]
 
+### Fixed
+- Renaming an opportunity note in Obsidian now updates its title on the pipeline card.
+
+### Changed
+- The opportunity form says that **Notes** is the text shown on the pipeline card.
+
 ## [0.3.0] - 2026-10-07
 
 ### Added

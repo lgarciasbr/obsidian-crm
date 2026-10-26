@@ -58,6 +58,16 @@ export default class CrmPlugin extends Plugin {
     );
 
     this.registerEvent(
+      this.app.vault.on("rename", (file) => {
+        if (file instanceof TFile && file.extension === "md") {
+          this.entityCreator().syncOpportunityName(file).catch(() => {
+            new Notice(`Could not update the opportunity name of ${file.basename}.`);
+          });
+        }
+      })
+    );
+
+    this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
         if (leaf) {
           this.openPipelineMarkdownAsCrmView(leaf);
@@ -261,7 +271,7 @@ export default class CrmPlugin extends Plugin {
       { key: "contact", label: "Contact", options: this.repository().names("crm/person"), allowCreateNew: true, defaultValue: defaults.contact },
       { key: "value", label: "Value", placeholder: "15000", defaultValue: defaults.value },
       { key: "stage", label: "Stage", options: this.pipelineStages(), defaultValue: defaults.stage || this.pipelineStages()[0], noPlaceholderOption: true },
-      { key: "notes", label: "Notes", placeholder: "Free-form notes about the opportunity", defaultValue: defaults.notes },
+      { key: "notes", label: "Notes", placeholder: "Short note shown on the pipeline card", defaultValue: defaults.notes },
     ];
   }
 

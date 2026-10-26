@@ -4,7 +4,7 @@ import { today } from "./dates";
 import { safeFileName } from "./file-names";
 import { cleanLink } from "./links";
 import { Frontmatter, listValue, textValue } from "./values";
-import { companyNote, opportunityNote, opportunityTitle, personNote } from "./templates";
+import { companyNote, opportunityNameFromTitle, opportunityNote, opportunityTitle, personNote } from "./templates";
 import { EntityFormResult } from "./types";
 import { ensureCrmFolders } from "./folders";
 import { CrmRecordType, CrmRepository } from "./repository";
@@ -105,6 +105,24 @@ export class EntityCreator {
       }
     }
     return renamed;
+  }
+
+  // The file name is the opportunity's visible title: when the user renames
+  // the note in Obsidian, `name` follows it so the pipeline card shows the new
+  // title. Renames made by updateOpportunity already match and change nothing.
+  async syncOpportunityName(file: TFile): Promise<void> {
+    const root = `${normalizeFolderPath(this.settings.crmRoot)}/`;
+    const type = textValue(this.metadataCache.getFileCache(file)?.frontmatter?.type);
+    if (!file.path.startsWith(root) || type !== "crm/opportunity") {
+      return;
+    }
+
+    await this.fileManager.processFrontMatter(file, (fm: Frontmatter) => {
+      const name = opportunityNameFromTitle(file.basename, safeFileName(cleanLink(textValue(fm.company))));
+      if (name && name !== safeFileName(textValue(fm.name))) {
+        fm.name = name;
+      }
+    });
   }
 
   // Moves an opportunity to the trash (honouring the user's trash setting)

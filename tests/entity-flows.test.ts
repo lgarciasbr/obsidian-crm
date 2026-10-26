@@ -18,7 +18,7 @@ function setup() {
   const fm = (path: string) => parseFrontmatter(vault.content(path));
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const any = (x: unknown) => x as any;
-  return { vault, cache, entities, interactions, fm, any };
+  return { vault, cache, fileManager, entities, interactions, fm, any };
 }
 
 const form = (values: Record<string, string>) => values as EntityFormResult;
@@ -125,6 +125,63 @@ test("editing an opportunity to a new company moves every reference", async () =
   assert.doesNotMatch(vault.content("CRM/Companies/Acme.md"), /Deal/);
   assert.match(vault.content("CRM/Companies/Globex.md"), /## Opportunities\n\n- \[\[Globex - Deal\]\]/);
   assert.match(vault.content("CRM/People/Jane.md"), /## Opportunities\n\n- \[\[Globex - Deal\]\]\n\n## History/);
+});
+
+test("renaming an opportunity note in Obsidian makes its name follow the file name", async () => {
+  const { vault, cache, fileManager, entities, fm } = setup();
+  await entities.createOpportunity(form({ name: "Deal", company_new: "Acme", stage: "lead" }), false);
+  cache.indexAll();
+
+  const file = vault.files.get("CRM/Opportunities/Acme - Deal.md")!.file;
+  await fileManager.renameFile(file, "CRM/Opportunities/Acme - Monthly plan.md");
+  await entities.syncOpportunityName(file as never);
+
+  const opp = "CRM/Opportunities/Acme - Monthly plan.md";
+  assert.equal(fm(opp).name, "Monthly plan");
+  assert.equal(fm(opp).crm_id, "opportunity-acme-deal");
+  assert.match(vault.content("CRM/Companies/Acme.md"), /- \[\[Acme - Monthly plan\]\]/);
+});
+
+test("an opportunity renamed without the company prefix takes the whole file name", async () => {
+  const { vault, cache, fileManager, entities, fm } = setup();
+  await entities.createOpportunity(form({ name: "Deal", company_new: "Acme", stage: "lead" }), false);
+  cache.indexAll();
+
+  const file = vault.files.get("CRM/Opportunities/Acme - Deal.md")!.file;
+  await fileManager.renameFile(file, "CRM/Opportunities/Monthly plan.md");
+  await entities.syncOpportunityName(file as never);
+
+  assert.equal(fm("CRM/Opportunities/Monthly plan.md").name, "Monthly plan");
+});
+
+test("a rename made by editing the opportunity keeps the name as typed", async () => {
+  const { vault, cache, entities, fm } = setup();
+  await entities.createOpportunity(form({ name: "Deal", company_new: "Acme", stage: "lead" }), false);
+  cache.indexAll();
+
+  const file = vault.files.get("CRM/Opportunities/Acme - Deal.md")!.file;
+  await entities.updateOpportunity(file as never, form({ name: "Q3/Q4 plan", company: "Acme", stage: "lead" }));
+  await entities.syncOpportunityName(file as never);
+
+  assert.equal(fm("CRM/Opportunities/Acme - Q3-Q4 plan.md").name, "Q3/Q4 plan");
+});
+
+test("renaming a note that is not an opportunity leaves it untouched", async () => {
+  const { vault, cache, fileManager, entities } = setup();
+  await entities.createCompany(form({ name: "Acme" }), false);
+  await vault.create("Notes/Deal.md", "---\ntype: \"crm/opportunity\"\nname: \"Deal\"\n---\n");
+  cache.indexAll();
+  const company = vault.content("CRM/Companies/Acme.md");
+
+  const companyFile = vault.files.get("CRM/Companies/Acme.md")!.file;
+  await fileManager.renameFile(companyFile, "CRM/Companies/Acme Corp.md");
+  await entities.syncOpportunityName(companyFile as never);
+  const outside = vault.files.get("Notes/Deal.md")!.file;
+  await fileManager.renameFile(outside, "Notes/Other.md");
+  await entities.syncOpportunityName(outside as never);
+
+  assert.equal(vault.content("CRM/Companies/Acme Corp.md"), company);
+  assert.equal(vault.content("Notes/Other.md"), "---\ntype: \"crm/opportunity\"\nname: \"Deal\"\n---\n");
 });
 
 test("deleting an opportunity removes its links and its place in the board order", async () => {
