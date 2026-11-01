@@ -1,17 +1,20 @@
 import { App, ButtonComponent, Modal, Notice, Setting } from "obsidian";
-import { EntityField, EntityFormResult } from "../crm/types";
+import { EntityField, EntityFormResult, PendingFollowUp } from "../crm/types";
 
 export class EntityModal extends Modal {
   private values: EntityFormResult = {};
   private submitting = false;
   private submitButton: ButtonComponent | null = null;
+  private followUpEl: HTMLElement | null = null;
+  private completionSelection = new Set<string>();
 
   constructor(
     app: App,
     private title: string,
     private fields: EntityField[],
     private onSubmit: (values: EntityFormResult) => Promise<void>,
-    private submitLabel = "Create"
+    private submitLabel = "Create",
+    private pendingFollowUps?: (values: EntityFormResult) => PendingFollowUp[]
   ) {
     super(app);
   }
@@ -25,6 +28,9 @@ export class EntityModal extends Modal {
 
     let currentSection = "";
     for (const field of this.fields) {
+      if (this.pendingFollowUps && ["next_action", "next_action_date"].includes(field.key)) {
+        continue;
+      }
       if (field.section && field.section !== currentSection) {
         currentSection = field.section;
         contentEl.createEl("h3", { text: currentSection, cls: "crm-modal-section" });
@@ -39,6 +45,11 @@ export class EntityModal extends Modal {
       } else {
         this.addTextField(contentEl, field);
       }
+    }
+
+    if (this.pendingFollowUps) {
+      this.followUpEl = contentEl.createDiv({ cls: "crm-follow-up" });
+      this.renderFollowUp();
     }
 
     new Setting(contentEl)
@@ -70,6 +81,22 @@ export class EntityModal extends Modal {
     if (missing) {
       new Notice(`${missing.label} is required.`);
       return;
+    }
+
+    if (this.pendingFollowUps) {
+      const mode = this.values.next_action_mode || "keep";
+      if (mode === "replace" && !this.values.next_action?.trim()) {
+        new Notice("Enter the next action, or choose to keep or complete the current one.");
+        return;
+      }
+      if (mode === "complete") {
+        const selected = this.pendingFollowUps(this.values).filter((p) => this.completionSelection.has(p.path));
+        if (!selected.length) {
+          new Notice("Select the follow-up(s) to complete.");
+          return;
+        }
+        this.values.complete_follow_ups = JSON.stringify(selected);
+      }
     }
 
     this.submitting = true;
@@ -128,6 +155,7 @@ export class EntityModal extends Modal {
             if (value) {
               this.values[`${field.key}_new`] = "";
             }
+            this.relatedChanged(field.key);
           });
         });
     }
@@ -146,8 +174,65 @@ export class EntityModal extends Modal {
           if (value.trim()) {
             this.values[field.key] = "";
           }
+          this.relatedChanged(field.key);
         });
       });
+  }
+
+  private relatedChanged(key: string): void {
+    if (!this.pendingFollowUps || !["person", "company", "opportunity"].includes(key)) return;
+    // Switching records must never carry completion consent to another follow-up.
+    this.completionSelection.clear();
+    this.values.next_action_mode = "keep";
+    this.renderFollowUp();
+  }
+
+  private renderFollowUp(): void {
+    const el = this.followUpEl;
+    if (!el || !this.pendingFollowUps) return;
+    el.empty();
+    el.createEl("h3", { text: "Next step", cls: "crm-modal-section" });
+    const pending = this.pendingFollowUps(this.values);
+    const mode = this.values.next_action_mode || "keep";
+    for (const p of pending) {
+      const item = el.createDiv({ cls: "crm-follow-up-current" });
+      item.createEl("strong", { text: p.label });
+      item.createDiv({ text: p.action + (p.date ? ` · ${p.date}` : "") });
+    }
+    if (!pending.length) {
+      new Setting(el).setName("Define a next action").addToggle((toggle) => {
+        toggle.setValue(mode === "replace").onChange((value) => {
+          this.values.next_action_mode = value ? "replace" : "keep";
+          this.renderFollowUp();
+        });
+      });
+    } else {
+      new Setting(el).setName("After this interaction").addDropdown((dropdown) => {
+        dropdown.addOption("keep", "Keep current follow-up(s)")
+          .addOption("replace", "Replace with another action")
+          .addOption("complete", "Complete — no next action")
+          .setValue(mode).onChange((value) => {
+            this.values.next_action_mode = value;
+            this.completionSelection.clear();
+            this.renderFollowUp();
+          });
+      });
+    }
+    if (mode === "replace") {
+      for (const field of this.fields.filter((f) => ["next_action", "next_action_date"].includes(f.key))) {
+        this.addTextField(el, { ...field, defaultValue: this.values[field.key] });
+      }
+      el.createEl("p", { text: "The new action will apply to the selected person, company and opportunity.", cls: "setting-item-description" });
+    } else if (mode === "complete") {
+      el.createEl("p", { text: "Choose exactly which follow-ups to complete. Their action and date will be cleared when you save; other records stay unchanged." });
+      for (const p of pending) {
+        new Setting(el).setName(p.label).setDesc(p.action + (p.date ? ` · ${p.date}` : ""))
+          .addToggle((toggle) => toggle.setValue(this.completionSelection.has(p.path)).onChange((value) => {
+            if (value) this.completionSelection.add(p.path);
+            else this.completionSelection.delete(p.path);
+          }));
+      }
+    }
   }
 
   private valueFor(field: EntityField): string {

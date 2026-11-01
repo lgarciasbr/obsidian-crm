@@ -32,6 +32,18 @@ Mark each step ✅ or ❌ and note the plugin version, Obsidian version and plat
 15. **Companies** and **Contacts** tabs: search, open a record, create one from the button. → Counts of people and opportunities per company are right.
 16. Set a company's `site` to `acme.example` and click it. → It opens `https://acme.example/` in the browser. Set it to `javascript:alert(1)`. → It shows as plain text and does not open.
 
+## Follow-up resolution
+
+Use only fictional contacts in a test vault. Set different next actions on a person and their company, then log an interaction linked to both.
+
+- Keep is selected initially, the current actions/dates are visible and replacement fields are hidden. Saving preserves both actions.
+- Choose Replace: action and date fields appear, an empty action is rejected and a valid replacement updates the related records.
+- Choose Complete: saving without selecting a record is rejected. Select only the person, save, and verify both of their fields are empty while the company's action/date remain unchanged. The summary records the completion.
+- Switch the related person after selecting a completion: the form returns to Keep and the old selection is forgotten.
+- If an action changed while the form was open, completion fails rather than clearing the new action.
+- An exact matching checkbox in a selected note becomes checked. A shared checkbox in an earlier interaction stays unchecked while another related record still has the same pending action.
+- With no current follow-up, only Define a next action is shown; enabling it reveals the two fields.
+
 ## 5. Phone (iOS/Android)
 
 17. Open the CRM. → One column fills most of the screen and swipes snap column by column.

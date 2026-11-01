@@ -140,7 +140,7 @@ ${interaction}\`\`\`
 Then update **each** related note (the person, the company and the opportunity):
 
 - \`last_contact\`: the later of its current value and the interaction date. Never an earlier date.
-- \`next_action\` and \`next_action_date\`: if the interaction has a next action, set them to it. If it has none, leave them unchanged.
+- \`next_action\` and \`next_action_date\`: if the interaction has a next action, set them to it. If it has none, leave them unchanged. Only an explicit request to complete a follow-up clears both fields on the selected records. Record the completed action in the interaction summary; do not clear other related records implicitly.
 - add \`- [[${callTitle}]]\` under \`## History\`.
 
 ## Updating records

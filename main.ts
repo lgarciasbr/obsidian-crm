@@ -260,7 +260,21 @@ export default class CrmPlugin extends Plugin {
     ], async (values) => {
       await this.interactionCreator().createInteraction(values);
       onCreated?.();
-    }, "Log interaction").open();
+    }, "Log interaction", (values) => {
+      const repo = this.repository();
+      return ([
+        ["person", "crm/person", "Person"],
+        ["company", "crm/company", "Company"],
+        ["opportunity", "crm/opportunity", "Opportunity"],
+      ] as const).flatMap(([key, type, label]) => {
+        if (values[`${key}_new`]?.trim()) return [];
+        const record = repo.findByName(type, values[key]);
+        if (!record) return [];
+        const action = textValue(record.frontmatter.next_action);
+        const date = textValue(record.frontmatter.next_action_date);
+        return action || date ? [{ path: record.path, label: `${label}: ${record.basename}`, action, date }] : [];
+      });
+    }).open();
   }
 
   // Single source of opportunity fields (used by create and edit).

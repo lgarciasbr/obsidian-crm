@@ -2,6 +2,7 @@
 // Node. The metadata cache only knows files that were explicitly indexed,
 // which reproduces Obsidian's lag in indexing notes created a moment ago.
 import Module from "module";
+import { Modal, Setting, ButtonComponent } from "./fake-ui";
 
 export class TAbstractFile {
   constructor(public path: string) {}
@@ -187,7 +188,7 @@ export function normalizePath(path: string): string {
 
 export const fakeWorkspace = { getLeaf: () => ({ openFile: async () => undefined }) };
 
-const fakeModule = new Proxy({ TAbstractFile, TFolder, TFile, Notice, normalizePath } as Record<string, unknown>, {
+const fakeModule = new Proxy({ TAbstractFile, TFolder, TFile, Notice, normalizePath, Modal, Setting, ButtonComponent } as Record<string, unknown>, {
   get(target, key: string) {
     if (key in target) return target[key];
     if (key === "debounce") return (fn: unknown) => fn;

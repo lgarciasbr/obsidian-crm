@@ -67,6 +67,18 @@ Obsidian lists them as `CRM: <command>`:
 | Validate data | Check every record against the data contract and write a report |
 | Update agent guide | Regenerate `AGENTS.md` after changing stages or settings (your notes in it are kept) |
 
+## Completing a follow-up
+
+In **Log interaction**, the **Next step** section shows the pending action and date
+for each selected person, company and opportunity:
+
+- **Keep current follow-up(s)** (default): log the conversation without changing pending actions.
+- **Replace with another action**: enter the new action and optional date. It applies to the related records.
+- **Complete — no next action**: explicitly select which records to clear. Their action and date become empty; the others stay unchanged. The interaction summary records what was completed.
+
+If none of the selected records has a pending action, a **Define a next action**
+toggle reveals the action and date fields. Nothing changes until you save.
+
 ## Settings
 
 - **Root folder** — where CRM notes live (inside the vault).

@@ -55,6 +55,81 @@ test("set next action adds no task when follow-up tasks are disabled", async () 
   assert.doesNotMatch(vault.content("CRM/Companies/Acme.md"), /- \[ \]/);
 });
 
+test("complete only the selected follow-up, preserving other related records", async () => {
+  const { vault, cache, fileManager, settings, entities, interactions, any } = setup();
+  await entities.createCompany(form({ name: "Acme" }), false);
+  await entities.createPerson(form({ name: "Jane", company: "Acme" }));
+  cache.indexAll();
+  const company = vault.files.get("CRM/Companies/Acme.md")!.file;
+  const person = vault.files.get("CRM/People/Jane.md")!.file;
+  await setNextAction(any(vault), any(fileManager), any(company), "Renew hosting", "2026-11-10", settings);
+  await setNextAction(any(vault), any(fileManager), any(person), "Sign contract", "2026-10-31", settings);
+  cache.indexAll();
+  await interactions.createInteraction(form({ person: "Jane", company: "Acme", date: "2026-10-31", kind: "note",
+    summary: "Client signed the contract.", next_action_mode: "complete",
+    complete_follow_ups: JSON.stringify([{ path: person.path, action: "Sign contract", date: "2026-10-31" }]),
+  }));
+  const personFm = parseFrontmatter(vault.content(person.path));
+  assert.equal(personFm.next_action, "");
+  assert.equal(personFm.next_action_date, "");
+  assert.equal(personFm.last_contact, "2026-10-31");
+  assert.match(vault.content(person.path), /- \[x\] Sign contract/);
+  assert.equal(parseFrontmatter(vault.content(company.path)).next_action, "Renew hosting");
+  assert.equal(parseFrontmatter(vault.content(company.path)).next_action_date, "2026-11-10");
+  assert.match(vault.content("CRM/Interactions/2026-10-31 - note - Jane.md"), /Completed follow-up on \[\[Jane\]\]: Sign contract/);
+});
+
+test("historical shared checkbox is completed only after all its pending records are completed", async () => {
+  const { vault, cache, entities, interactions } = setup();
+  await entities.createCompany(form({ name: "Acme" }), false);
+  await entities.createPerson(form({ name: "Jane", company: "Acme" }));
+  cache.indexAll();
+  await interactions.createInteraction(form({ person: "Jane", company: "Acme", date: "2026-10-01",
+    kind: "call", next_action: "Sign contract", next_action_date: "2026-10-31" }));
+  cache.indexAll();
+  const history = "CRM/Interactions/2026-10-01 - call - Jane.md";
+  const complete = async (path: string, day: string) => {
+    await interactions.createInteraction(form({ person: "Jane", company: "Acme", date: day,
+      next_action_mode: "complete", complete_follow_ups: JSON.stringify([
+        { path, action: "Sign contract", date: "2026-10-31" },
+      ]) }));
+    cache.indexAll();
+  };
+  await complete("CRM/People/Jane.md", "2026-10-30");
+  assert.match(vault.content(history), /- \[ \] Sign contract/); // company still pending
+  await complete("CRM/Companies/Acme.md", "2026-10-31");
+  assert.match(vault.content(history), /- \[x\] Sign contract/);
+  assert.equal(parseFrontmatter(vault.content("CRM/People/Jane.md")).next_action, "");
+  assert.equal(parseFrontmatter(vault.content("CRM/Companies/Acme.md")).next_action, "");
+});
+
+test("explicit keep ignores hidden replacement values", async () => {
+  const { vault, cache, fileManager, settings, entities, interactions, any } = setup();
+  await entities.createCompany(form({ name: "Acme" }), false);
+  const file = vault.files.get("CRM/Companies/Acme.md")!.file;
+  await setNextAction(any(vault), any(fileManager), any(file), "Sign contract", "2026-10-31", settings);
+  cache.indexAll();
+  await interactions.createInteraction(form({ company: "Acme", date: "2026-10-31", next_action_mode: "keep",
+    next_action: "Hidden draft", next_action_date: "2026-11-20" }));
+  assert.equal(parseFrontmatter(vault.content(file.path)).next_action, "Sign contract");
+  assert.doesNotMatch(vault.content("CRM/Interactions/2026-10-31 - note - Acme.md"), /Hidden draft/);
+});
+
+test("completion rejects stale, unrelated and empty selections before creating an interaction", async () => {
+  const { vault, cache, fileManager, settings, entities, interactions, any } = setup();
+  await entities.createCompany(form({ name: "Acme" }), false);
+  const file = vault.files.get("CRM/Companies/Acme.md")!.file;
+  await setNextAction(any(vault), any(fileManager), any(file), "New task", "2026-11-10", settings);
+  cache.indexAll();
+  for (const selected of [[], [{ path: file.path, action: "Old task", date: "2026-10-31" }],
+    [{ path: "CRM/People/Other.md", action: "New task", date: "2026-11-10" }]]) {
+    await assert.rejects(interactions.createInteraction(form({ company: "Acme", date: "2026-10-31",
+      next_action_mode: "complete", complete_follow_ups: JSON.stringify(selected) })));
+  }
+  assert.equal([...vault.files.keys()].filter((p) => p.startsWith("CRM/Interactions/")).length, 0);
+  assert.equal(parseFrontmatter(vault.content(file.path)).next_action, "New task");
+});
+
 test("logging an interaction respects the follow-up task setting", async () => {
   const { vault, interactions } = setup({ createTasksByDefault: false });
   await interactions.createInteraction(form({ company_new: "Acme", date: "2026-10-05", kind: "call", next_action: "Send proposal" }));

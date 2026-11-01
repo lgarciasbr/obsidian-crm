@@ -11,6 +11,13 @@ export interface EntityField {
   inputType?: "date";
 }
 
+export interface PendingFollowUp {
+  path: string;
+  label: string;
+  action: string;
+  date: string;
+}
+
 export interface EntityFormResult {
   [key: string]: string;
 }

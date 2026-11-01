@@ -17,6 +17,14 @@ export function followUpTask(action: string | undefined, date: string | undefine
   return `- [ ] ${cleanAction}${due}${cleanTag}`;
 }
 
+// Only the exact generated task is completed; other checkboxes are untouched.
+export async function completeFollowUpTask(vault: Vault, file: TFile, action: string, date: string, tag: string): Promise<void> {
+  const task = followUpTask(action, date, tag);
+  if (!task) return;
+  await vault.process(file, (content) => content.split("\n")
+    .map((line) => line === task ? line.replace("- [ ]", "- [x]") : line).join("\n"));
+}
+
 export async function setNextAction(
   vault: Vault,
   fileManager: FileManager,

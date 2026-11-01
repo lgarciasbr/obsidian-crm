@@ -99,7 +99,16 @@ opportunities are pruned the next time the order is saved.
 - **R2 — next_action is never silently wiped.**
   When an interaction has an empty `next_action`, the related record keeps its
   existing `next_action` / `next_action_date`. Only a non-empty interaction
-  next_action replaces the record's pending action.
+  next_action replaces the record's pending action. The interaction form also offers
+  an explicit **Complete — no next action** choice: the user selects the related
+  records to clear. Only those records lose their action and date; other related
+  records keep their follow-up. The interaction summary records what was completed.
+  Completion validates the action/date shown when the form was opened; if they changed,
+  the user must reopen the form rather than clearing a newer follow-up.
+  Exact matching task checkboxes are completed in selected notes and in earlier
+  interactions, but a shared historical task stays pending while another unselected
+  linked record still carries the same action/date. Historical interaction fields
+  remain as originally logged.
 
 - **R3 — valid enumerations.** `stage` (opportunity) and `kind` (interaction)
   must be within their allowed sets.

@@ -7,6 +7,9 @@ taken from its section below.
 
 ## [Unreleased]
 
+### Added
+- Log interaction: choose to keep, replace or explicitly complete selected follow-ups. Completion clears the selected records' action/date and records it in the interaction summary, without clearing other related records. Matching checkboxes are completed without closing a shared task still pending on another record.
+
 ### Fixed
 - Renaming an opportunity note in Obsidian now updates its title on the pipeline card.
 
