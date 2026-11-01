@@ -130,6 +130,71 @@ test("completion rejects stale, unrelated and empty selections before creating a
   assert.equal(parseFrontmatter(vault.content(file.path)).next_action, "New task");
 });
 
+test("signed contract clears the shared follow-up on person, company and opportunity, not the history", async () => {
+  const { vault, cache, entities, interactions } = setup();
+  await entities.createOpportunity(form({ name: "Deal", company_new: "Acme", contact_new: "Jane", stage: "lead" }), false);
+  cache.indexAll();
+  const related = { person: "Jane", company: "Acme", opportunity: "Acme - Deal" };
+  const paths = ["CRM/People/Jane.md", "CRM/Companies/Acme.md", "CRM/Opportunities/Acme - Deal.md"];
+  await interactions.createInteraction(form({ ...related, date: "2026-10-01", kind: "call",
+    next_action: "Sign contract", next_action_date: "2026-10-31" }));
+  cache.indexAll();
+  await interactions.createInteraction(form({ ...related, date: "2026-10-31", kind: "note",
+    summary: "Client signed the contract.", next_action_mode: "complete",
+    next_action: "Hidden draft must not become a new task", next_action_date: "2026-12-01",
+    complete_follow_ups: JSON.stringify(paths.map((path) => ({ path, action: "Sign contract", date: "2026-10-31" }))),
+  }));
+  for (const path of paths) {
+    const fm = parseFrontmatter(vault.content(path));
+    assert.equal(fm.next_action, "");
+    assert.equal(fm.next_action_date, "");
+    assert.equal(fm.last_contact, "2026-10-31");
+    assert.match(vault.content(path), /2026-10-31 - note - Jane/);
+  }
+  const original = vault.content("CRM/Interactions/2026-10-01 - call - Jane.md");
+  assert.equal(parseFrontmatter(original).next_action, "Sign contract");
+  assert.match(original, /- \[x\] Sign contract/);
+  const current = vault.content("CRM/Interactions/2026-10-31 - note - Jane.md");
+  assert.match(current, /Client signed the contract/);
+  assert.equal((current.match(/Completed follow-up on/g) || []).length, 3);
+  assert.doesNotMatch(current, /Hidden draft/);
+});
+
+test("blank fields keep the action and date; a filled action replaces both", async () => {
+  const { vault, cache, entities, interactions } = setup();
+  await entities.createCompany(form({ name: "Acme" }), false);
+  cache.indexAll();
+  await interactions.createInteraction(form({ company: "Acme", date: "2026-10-01",
+    next_action: "Sign contract", next_action_date: "2026-10-31" }));
+  cache.indexAll();
+  await interactions.createInteraction(form({ company: "Acme", date: "2026-10-20", next_action: "", next_action_date: "" }));
+  let fm = parseFrontmatter(vault.content("CRM/Companies/Acme.md"));
+  assert.equal(fm.next_action, "Sign contract");
+  assert.equal(fm.next_action_date, "2026-10-31");
+  await interactions.createInteraction(form({ company: "Acme", date: "2026-10-31",
+    next_action: "Schedule onboarding", next_action_date: "" }));
+  fm = parseFrontmatter(vault.content("CRM/Companies/Acme.md"));
+  assert.equal(fm.next_action, "Schedule onboarding");
+  assert.equal(fm.next_action_date, ""); // no old date leaking into the new task
+});
+
+test("completion works with task generation disabled and does not roll last contact back", async () => {
+  const { vault, cache, entities, interactions } = setup({ createTasksByDefault: false });
+  await entities.createCompany(form({ name: "Acme" }), false);
+  cache.indexAll();
+  await interactions.createInteraction(form({ company: "Acme", date: "2026-11-03",
+    next_action: "Sign contract", next_action_date: "2026-10-31" }));
+  cache.indexAll();
+  await interactions.createInteraction(form({ company: "Acme", date: "2026-10-31", next_action_mode: "complete",
+    complete_follow_ups: JSON.stringify([{ path: "CRM/Companies/Acme.md", action: "Sign contract", date: "2026-10-31" }]),
+  }));
+  const fm = parseFrontmatter(vault.content("CRM/Companies/Acme.md"));
+  assert.equal(fm.next_action, "");
+  assert.equal(fm.next_action_date, "");
+  assert.equal(fm.last_contact, "2026-11-03");
+  assert.doesNotMatch(vault.content("CRM/Interactions/2026-10-31 - note - Acme.md"), /- \[ \]/);
+});
+
 test("logging an interaction respects the follow-up task setting", async () => {
   const { vault, interactions } = setup({ createTasksByDefault: false });
   await interactions.createInteraction(form({ company_new: "Acme", date: "2026-10-05", kind: "call", next_action: "Send proposal" }));
