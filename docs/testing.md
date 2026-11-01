@@ -36,13 +36,14 @@ Mark each step ✅ or ❌ and note the plugin version, Obsidian version and plat
 
 Use only fictional contacts in a test vault. Set different next actions on a person and their company, then log an interaction linked to both.
 
-- Keep is selected initially, the current actions/dates are visible and replacement fields are hidden. Saving preserves both actions.
-- Choose Replace: action and date fields appear, an empty action is rejected and a valid replacement updates the related records.
-- Choose Complete: saving without selecting a record is rejected. Select only the person, save, and verify both of their fields are empty while the company's action/date remain unchanged. The summary records the completion.
-- Switch the related person after selecting a completion: the form returns to Keep and the old selection is forgotten.
+- The original action and date fields are visible. Empty values preserve existing follow-ups; filling a new action replaces them.
+- Check Complete current follow-up: the two fields are disabled. If all pending actions/dates are identical, saving completes them without extra selectors.
+- If the pending actions differ, record selectors appear only after checking Complete. Saving without selecting any is rejected. Select only the person, save, and verify their action/date are empty while the company's remain unchanged.
+- Unchecking Complete enables the fields again and restores the draft.
+- Switch the related person after selecting a completion: the toggle becomes unchecked and the old selection is forgotten.
 - If an action changed while the form was open, completion fails rather than clearing the new action.
 - An exact matching checkbox in a selected note becomes checked. A shared checkbox in an earlier interaction stays unchecked while another related record still has the same pending action.
-- With no current follow-up, only Define a next action is shown; enabling it reveals the two fields.
+- With no current follow-up, only the two original fields are shown.
 
 ## 5. Phone (iOS/Android)
 

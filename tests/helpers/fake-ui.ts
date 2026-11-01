@@ -16,12 +16,13 @@ export class Control {
   value: string | boolean = "";
   options: Record<string, string> = {};
   inputEl = { type: "text" };
+  disabled = false;
   change: (value: never) => void = () => undefined;
   setValue(value: string | boolean): this { this.value = value; return this; }
   setPlaceholder(_value: string): this { return this; }
   setButtonText(value: string): this { this.value = value; return this; }
   setCta(): this { return this; }
-  setDisabled(_disabled: boolean): this { return this; }
+  setDisabled(disabled: boolean): this { this.disabled = disabled; return this; }
   addOption(key: string, label: string): this { this.options[key] = label; return this; }
   onChange(fn: (value: never) => void): this { this.change = fn; return this; }
   onClick(fn: () => void): this { this.change = fn; return this; }

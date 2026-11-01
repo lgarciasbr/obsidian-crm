@@ -36,13 +36,15 @@ function open(records = pending) {
   return { modal, el, saved, setting, save };
 }
 
-test("modal defaults to keep and reveals replacement fields only on request", async () => {
+const completeLabel = "Complete current follow-up — no next action";
+
+test("original two fields stay visible and filling them replaces the action", async () => {
   const { el, saved, setting, save } = open();
-  assert.equal(setting("After this interaction").controls[0].value, "keep");
-  assert.equal(el.allSettings().some((s) => s.name === "Next action"), false);
-  setting("After this interaction").controls[0].select("replace");
-  await save();
-  assert.equal(saved.length, 0); // empty replacement is not accepted
+  assert.ok(setting("Next action"));
+  assert.ok(setting("Next action date"));
+  assert.equal(setting(completeLabel).controls[0].value, false);
+  assert.equal(el.allSettings().some((s) => s.name === "After this interaction"), false);
+  assert.equal(el.allSettings().some((s) => s.name === "Person: Jane"), false);
   setting("Next action").controls[0].select("Schedule onboarding");
   setting("Next action date").controls[0].select("2026-11-03");
   await save();
@@ -50,9 +52,9 @@ test("modal defaults to keep and reveals replacement fields only on request", as
   assert.equal(saved[0].next_action_date, "2026-11-03");
 });
 
-test("completion requires explicit target selection and submits only the selected snapshot", async () => {
+test("different actions require selection only after checking complete", async () => {
   const { saved, setting, save } = open();
-  setting("After this interaction").controls[0].select("complete");
+  setting(completeLabel).controls[0].select(true);
   await save();
   assert.equal(saved.length, 0);
   setting("Person: Jane").controls[0].select(true);
@@ -60,21 +62,41 @@ test("completion requires explicit target selection and submits only the selecte
   assert.deepEqual(JSON.parse(saved[0].complete_follow_ups), [pending[0]]);
 });
 
+test("one shared action completes directly without extra selectors", async () => {
+  const shared = [pending[0], { ...pending[1], action: pending[0].action, date: pending[0].date }];
+  const { saved, el, setting, save } = open(shared);
+  setting(completeLabel).controls[0].select(true);
+  assert.equal(setting("Next action").controls[0].disabled, true);
+  assert.equal(setting("Next action date").controls[0].disabled, true);
+  assert.equal(el.allSettings().some((s) => s.name === "Person: Jane"), false);
+  await save();
+  assert.deepEqual(JSON.parse(saved[0].complete_follow_ups), shared);
+});
+
 test("switching a related record resets completion consent", () => {
   const { setting } = open();
-  setting("After this interaction").controls[0].select("complete");
+  setting(completeLabel).controls[0].select(true);
   setting("Person: Jane").controls[0].select(true);
   setting("Person").controls[0].select("Other");
-  assert.equal(setting("After this interaction").controls[0].value, "keep");
-  setting("After this interaction").controls[0].select("complete");
+  assert.equal(setting(completeLabel).controls[0].value, false);
+  setting(completeLabel).controls[0].select(true);
   assert.equal(setting("Person: Jane").controls[0].value, false);
 });
 
-test("without a pending action only the define-next-action toggle is shown", () => {
+test("without a pending action only the original two fields are shown", () => {
   const { el, setting } = open([]);
-  assert.equal(el.allSettings().some((s) => s.name === "After this interaction"), false);
-  setting("Define a next action").controls[0].select(true);
   assert.ok(setting("Next action"));
-  setting("Define a next action").controls[0].select(false);
-  assert.equal(el.allSettings().some((s) => s.name === "Next action"), false);
+  assert.ok(setting("Next action date"));
+  assert.equal(el.allSettings().some((s) => s.name === completeLabel), false);
+});
+
+test("unchecking completion restores replacement behavior", async () => {
+  const { saved, setting, save } = open([pending[0]]);
+  setting("Next action").controls[0].select("Next draft");
+  setting(completeLabel).controls[0].select(true);
+  setting(completeLabel).controls[0].select(false);
+  assert.equal(setting("Next action").controls[0].disabled, false);
+  await save();
+  assert.equal(saved[0].next_action, "Next draft");
+  assert.notEqual(saved[0].next_action_mode, "complete");
 });

@@ -69,15 +69,16 @@ Obsidian lists them as `CRM: <command>`:
 
 ## Completing a follow-up
 
-In **Log interaction**, the **Next step** section shows the pending action and date
-for each selected person, company and opportunity:
+In **Log interaction**, the original **Next action** and **Next action date**
+fields stay visible. Leave them empty to keep the pending follow-up, or fill them
+to replace it.
 
-- **Keep current follow-up(s)** (default): log the conversation without changing pending actions.
-- **Replace with another action**: enter the new action and optional date. It applies to the related records.
-- **Complete — no next action**: explicitly select which records to clear. Their action and date become empty; the others stay unchanged. The interaction summary records what was completed.
-
-If none of the selected records has a pending action, a **Define a next action**
-toggle reveals the action and date fields. Nothing changes until you save.
+When there is a pending follow-up, **Complete current follow-up — no next action**
+disables the two fields and clears the current action/date on saving. If related
+records have different pending actions, selectors appear only after checking this
+option, so you can choose exactly which to complete. When they share the same
+action/date, no extra selectors are needed. Completion is recorded in the
+interaction summary. Nothing changes until you save.
 
 ## Settings
 

@@ -84,7 +84,7 @@ export class EntityModal extends Modal {
     }
 
     if (this.pendingFollowUps) {
-      const mode = this.values.next_action_mode || "keep";
+      const mode = this.values.next_action_mode || (this.values.next_action?.trim() ? "replace" : "keep");
       if (mode === "replace" && !this.values.next_action?.trim()) {
         new Notice("Enter the next action, or choose to keep or complete the current one.");
         return;
@@ -117,7 +117,7 @@ export class EntityModal extends Modal {
     this.contentEl.empty();
   }
 
-  private addTextField(contentEl: HTMLElement, field: EntityField): void {
+  private addTextField(contentEl: HTMLElement, field: EntityField, disabled = false): void {
     new Setting(contentEl)
       .setName(field.label)
       .addText((text) => {
@@ -125,6 +125,7 @@ export class EntityModal extends Modal {
           // Native date picker: displays in the user's locale, value stays ISO.
           text.inputEl.type = "date";
         }
+        text.setDisabled(disabled);
         text.setPlaceholder(field.placeholder || "");
         text.setValue(field.defaultValue || "");
         text.onChange((value) => {
@@ -183,7 +184,7 @@ export class EntityModal extends Modal {
     if (!this.pendingFollowUps || !["person", "company", "opportunity"].includes(key)) return;
     // Switching records must never carry completion consent to another follow-up.
     this.completionSelection.clear();
-    this.values.next_action_mode = "keep";
+    this.values.next_action_mode = "";
     this.renderFollowUp();
   }
 
@@ -193,38 +194,23 @@ export class EntityModal extends Modal {
     el.empty();
     el.createEl("h3", { text: "Next step", cls: "crm-modal-section" });
     const pending = this.pendingFollowUps(this.values);
-    const mode = this.values.next_action_mode || "keep";
-    for (const p of pending) {
-      const item = el.createDiv({ cls: "crm-follow-up-current" });
-      item.createEl("strong", { text: p.label });
-      item.createDiv({ text: p.action + (p.date ? ` · ${p.date}` : "") });
+    const complete = this.values.next_action_mode === "complete";
+    for (const field of this.fields.filter((f) => ["next_action", "next_action_date"].includes(f.key))) {
+      this.addTextField(el, { ...field, defaultValue: this.values[field.key] }, complete);
     }
-    if (!pending.length) {
-      new Setting(el).setName("Define a next action").addToggle((toggle) => {
-        toggle.setValue(mode === "replace").onChange((value) => {
-          this.values.next_action_mode = value ? "replace" : "keep";
-          this.renderFollowUp();
-        });
-      });
-    } else {
-      new Setting(el).setName("After this interaction").addDropdown((dropdown) => {
-        dropdown.addOption("keep", "Keep current follow-up(s)")
-          .addOption("replace", "Replace with another action")
-          .addOption("complete", "Complete — no next action")
-          .setValue(mode).onChange((value) => {
-            this.values.next_action_mode = value;
-            this.completionSelection.clear();
-            this.renderFollowUp();
-          });
-      });
-    }
-    if (mode === "replace") {
-      for (const field of this.fields.filter((f) => ["next_action", "next_action_date"].includes(f.key))) {
-        this.addTextField(el, { ...field, defaultValue: this.values[field.key] });
-      }
-      el.createEl("p", { text: "The new action will apply to the selected person, company and opportunity.", cls: "setting-item-description" });
-    } else if (mode === "complete") {
-      el.createEl("p", { text: "Choose exactly which follow-ups to complete. Their action and date will be cleared when you save; other records stay unchanged." });
+    if (!pending.length) return;
+    const different = new Set(pending.map((p) => JSON.stringify([p.action, p.date]))).size > 1;
+    new Setting(el).setName("Complete current follow-up — no next action")
+      .setDesc(different ? "Leave unchecked to keep the current action or enter a new one above."
+        : pending[0].action + (pending[0].date ? ` · ${pending[0].date}` : ""))
+      .addToggle((toggle) => toggle.setValue(complete).onChange((value) => {
+        this.values.next_action_mode = value ? "complete" : "";
+        this.completionSelection.clear();
+        if (value && !different) pending.forEach((p) => this.completionSelection.add(p.path));
+        this.renderFollowUp();
+      }));
+    if (complete && different) {
+      el.createEl("p", { text: "These records have different follow-ups. Choose which to complete:" });
       for (const p of pending) {
         new Setting(el).setName(p.label).setDesc(p.action + (p.date ? ` · ${p.date}` : ""))
           .addToggle((toggle) => toggle.setValue(this.completionSelection.has(p.path)).onChange((value) => {
